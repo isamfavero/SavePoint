@@ -12,9 +12,6 @@ export function CabecalhoMarca() {
           <span className="marca-sub">GAMING JOURNAL</span>
         </div>
       </div>
-      <div className="marca-avatar" aria-label="Perfil do jogador">
-        S
-      </div>
     </header>
   );
 }
