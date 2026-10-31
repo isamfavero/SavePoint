@@ -224,6 +224,67 @@ textarea {
   box-shadow: 0 0 8px rgba(242, 184, 75, 0.6);
 }
 
+/* ---------- Mini-cronômetro ---------- */
+
+.mini-cronometro-area {
+  display: flex;
+  flex: 0 0 auto;
+  justify-content: center;
+  padding: 10px 20px;
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-bg);
+}
+
+.mini-cronometro {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  max-width: 100%;
+  padding: 8px 14px;
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-size: 0.78rem;
+  font-weight: 600;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.mini-cronometro:hover {
+  border-color: var(--color-accent);
+}
+
+.mini-cronometro-ponto {
+  flex: 0 0 auto;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--color-status);
+  box-shadow: 0 0 8px rgba(109, 216, 207, 0.55);
+}
+
+.mini-cronometro-rotulo {
+  color: var(--color-text-muted);
+  font-weight: 600;
+}
+
+.mini-cronometro-tempo {
+  color: var(--color-accent);
+  font-family: var(--font-display);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.02em;
+}
+
+.mini-cronometro-pausado .mini-cronometro-ponto {
+  background: var(--color-accent);
+  box-shadow: 0 0 8px rgba(242, 184, 75, 0.6);
+}
+
+.mini-cronometro-pausado .mini-cronometro-tempo {
+  color: var(--color-accent-soft);
+}
+
 @media (min-width: 431px) {
   body {
     padding: 24px 0;
@@ -244,6 +305,10 @@ textarea {
   .app-main {
     padding-top: 44px;
     padding-bottom: 40px;
+  }
+
+  .mini-cronometro-area {
+    border-radius: 23px 23px 0 0;
   }
 
   .bottom-nav {
@@ -1227,7 +1292,186 @@ textarea {
   margin-top: 16px;
 }
 
-:where(button, a, input):focus-visible {
+.jornada-resumo {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.jornada-sessao {
+  margin-top: 16px;
+  padding: 18px;
+  border: 1px solid var(--color-border);
+  border-radius: 18px;
+  background: var(--color-surface);
+}
+
+.jornada-sessao-ativa {
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+
+.cronometro {
+  margin-top: 4px;
+  padding: 22px 20px;
+  border: 1px solid rgba(242, 184, 75, 0.32);
+  border-radius: 18px;
+  background:
+    radial-gradient(120% 140% at 50% 0%, rgba(242, 184, 75, 0.12), transparent 62%),
+    var(--color-surface);
+  text-align: center;
+}
+
+.jornada-sessao-ativa .cronometro {
+  margin-top: 0;
+}
+
+.cronometro-rotulo {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--color-accent);
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.cronometro-ponto {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--color-accent);
+  box-shadow: 0 0 8px rgba(242, 184, 75, 0.65);
+}
+
+.cronometro-estado {
+  padding: 4px 7px;
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  color: var(--color-text-muted);
+  font-size: 0.58rem;
+  letter-spacing: 0.08em;
+}
+
+.cronometro-tempo {
+  margin: 12px 0 0;
+  color: var(--color-accent);
+  font-family: var(--font-display);
+  font-size: clamp(2.6rem, 13vw, 3.4rem);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.03em;
+  line-height: 1;
+}
+
+.cronometro-pausado {
+  border-color: rgba(152, 152, 163, 0.28);
+}
+
+.cronometro-pausado .cronometro-tempo {
+  color: var(--color-accent-soft);
+}
+
+.jornada-acoes {
+  display: flex;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.jornada-acoes > button {
+  flex: 1;
+}
+
+.jornada-convite,
+.jornada-bloqueio {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: 0.9rem;
+  line-height: 1.55;
+}
+
+.jornada-bloqueio {
+  color: var(--color-text);
+}
+
+.jornada-sessao > .botao-primario {
+  width: 100%;
+  margin-top: 14px;
+}
+
+.botao-primario.sessao-bloqueada {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.jornada-sessao .campo-erro {
+  margin-top: 12px;
+}
+
+/* ---------- Encerrar sessão ---------- */
+
+.encerrar-main {
+  padding-bottom: 28px;
+}
+
+.encerrar-form {
+  margin-top: 26px;
+}
+
+.encerrar-form .campo {
+  margin-bottom: 20px;
+}
+
+.encerrar-form .campo:last-of-type {
+  margin-bottom: 0;
+}
+
+.campo-opcional {
+  color: var(--color-text-muted);
+  font-size: 0.62rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+}
+
+.campo-textarea {
+  display: block;
+  width: 100%;
+  min-height: 92px;
+  padding: 14px;
+  border: 1px solid var(--color-border);
+  border-radius: 14px;
+  outline: none;
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-size: 0.92rem;
+  line-height: 1.5;
+  resize: vertical;
+}
+
+.campo-textarea:focus {
+  border-color: var(--color-accent);
+}
+
+.campo-textarea::placeholder {
+  color: var(--color-text-muted);
+}
+
+.encerrar-aviso {
+  margin: 12px 0 0;
+  padding: 12px 14px;
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  background: var(--color-surface);
+  color: var(--color-text-muted);
+  font-size: 0.82rem;
+  line-height: 1.5;
+}
+
+:where(button, a, input, textarea):focus-visible {
   outline: 2px solid var(--color-accent);
   outline-offset: 2px;
 }

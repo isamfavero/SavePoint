@@ -10,6 +10,7 @@ import {
 import { useRef, useState } from 'react'
 import type { ChangeEvent, FormEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { MiniCronometro } from '../components/MiniCronometro'
 import { useJogoAtual } from '../contexts/JogoAtualContext'
 import { useServicoSavePoint } from '../contexts/ServicoContext'
 import type { SituacaoJogo } from '../data'
@@ -169,6 +170,7 @@ export function AdicionarJogo() {
 
   return (
     <div className="app-shell app-shell-formulario">
+      <MiniCronometro />
       <main className="app-main formulario-main">
         <div className="formulario-topo">
           <button
