@@ -1416,29 +1416,60 @@ textarea {
   gap: 6px;
 }
 
-.jogo-info-linha {
+.jogo-detalhes {
   display: flex;
   align-items: center;
   gap: 8px;
-  margin: 0;
+  margin-top: 10px;
+  width: 100%;
+  overflow: hidden;
+}
+
+.jogo-plataforma {
   color: var(--color-text-muted);
-  font-size: 0.7rem;
+  font-size: 0.72rem;
   font-weight: 500;
   letter-spacing: 0.02em;
   line-height: 1;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  min-width: 0;
+  flex-shrink: 1;
 }
 
-.jogo-info-linha .situacao-selector {
-  margin-left: 0;
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  background: var(--color-surface);
+  color: var(--color-text-muted);
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1;
+  white-space: nowrap;
   flex-shrink: 0;
 }
 
-.jogo-info-linha .situacao-botao {
-  padding: 3px 8px;
-  font-size: 0.62rem;
+.chip svg {
+  flex: 0 0 auto;
+}
+
+.chip chip-tempo,
+.chip chip-sessoes {
+  color: var(--color-text);
+}
+
+.chip-situacao .situacao-botao {
+  padding: 3px 7px;
+  font-size: 11px;
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-text);
+  gap: 5px;
 }
 
 .jogo-rotulo {

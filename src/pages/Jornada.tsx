@@ -25,6 +25,7 @@ import {
   formatarHoras,
   formatarSessoes,
 } from '../dominio/biblioteca'
+import { formatarDuracao } from '../dominio/cronometro'
 import { salvarInstanteEncerramento } from '../estado/encerramento'
 import { useJogoAtualDetalhe } from '../hooks/useJogoAtualDetalhe'
 import { useSessoesDoJogo } from '../hooks/useSessoesDoJogo'
@@ -229,23 +230,19 @@ export function Jornada() {
               <div className="jogo-info">
                 <span className="jogo-rotulo">JOGO ATUAL</span>
                 <h2 className="jogo-titulo">{jogo.nome}</h2>
-                <p className="jogo-info-linha">
-                  {jogo.plataforma}
-                  <SituacaoSelector jogo={jogo} />
-                </p>
+              </div>
 
-                <div className="jornada-resumo">
-                  <span className="meta-pill">
-                    <Clock size={13} strokeWidth={1.5} aria-hidden="true" />
-                    {carregandoSessoes ? '—' : `${formatarHoras(tempoTotalMs)} jogadas`}
-                  </span>
-                  <span className="meta-pill">
-                    <BookOpen size={13} strokeWidth={1.5} aria-hidden="true" />
-                    {carregandoSessoes
-                      ? '—'
-                      : `${formatarSessoes(estatisticas?.totalSessoes ?? 0)} sessões arquivadas`}
-                  </span>
-                </div>
+              <div className="jogo-detalhes">
+                <span className="jogo-plataforma">{jogo.plataforma}</span>
+                <span className="chip chip-tempo">
+                  <Clock size={14} strokeWidth={1.75} aria-hidden="true" />
+                  {carregandoSessoes ? '—' : formatarDuracao(tempoTotalMs)}
+                </span>
+                <span className="chip chip-sessoes">
+                  <BookOpen size={14} strokeWidth={1.75} aria-hidden="true" />
+                  {carregandoSessoes ? '—' : formatarSessoes(estatisticas?.totalSessoes ?? 0)}
+                </span>
+                <SituacaoSelector jogo={jogo} className="chip chip-situacao" />
               </div>
             </div>
           </div>
