@@ -306,13 +306,13 @@ export function NovaAnotacao() {
           <ChipSessao numero={sessao.numero} duracaoMs={duracaoMs} pausada={pausada} />
         </div>
 
-        <p className="anotacao-jogo">{jogo?.nome ?? 'Jogo'}</p>
+        <p className="anotacao-jogo">{jogo?.nome?.toUpperCase() ?? 'Jogo'}</p>
         <h1 className="formulario-titulo">Nova anotação</h1>
 
         <form id="form-nova-anotacao" className="anotacao-form" onSubmit={aoSalvar} noValidate>
           <div className="campo">
             <label className="campo-rotulo" htmlFor="texto-anotacao">
-              O que você descobriu?
+              O QUE VOCÊ DESCOBRIU?
             </label>
             <textarea
               id="texto-anotacao"

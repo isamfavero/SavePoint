@@ -2516,6 +2516,160 @@ textarea {
   }
 }
 
+/* ---------- Cabeçalho da marca ---------- */
+
+.marca-logo-img {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  object-fit: contain;
+  object-position: center;
+  background: #0c0e16;
+}
+
+.marca-nome {
+  font-weight: 700;
+}
+
+.marca-sub {
+  letter-spacing: 0.18em;
+  color: var(--color-text-muted);
+}
+
+.marca-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  display: grid;
+  place-items: center;
+  font-weight: 700;
+  font-size: 0.85rem;
+  color: var(--color-text);
+}
+
+/* ---------- Saudação e títulos ---------- */
+
+.saudacao {
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--color-accent);
+}
+
+.saudacao-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--color-accent);
+  box-shadow: 0 0 8px var(--color-accent);
+}
+
+.saudacao::before {
+  display: none;
+}
+
+.biblioteca-titulo {
+  font-family: var(--font-display);
+  font-weight: 700;
+}
+
+/* ---------- Filtros da biblioteca ---------- */
+
+.secao-titulo {
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.filtro-contagem {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 4px;
+  border-radius: 50%;
+  font-size: 0.68rem;
+  font-weight: 700;
+  opacity: 1;
+}
+
+.filtro[aria-pressed='true'] .filtro-contagem {
+  color: var(--color-bg-deep);
+}
+
+/* ---------- Botão + da biblioteca ---------- */
+
+.fab {
+  width: 56px;
+  height: 56px;
+  box-shadow: 0 12px 30px rgba(242, 184, 75, 0.4);
+}
+
+/* ---------- Barra inferior ---------- */
+
+.bottom-nav {
+  background: #11131B;
+  border-top: 1px solid #282A32;
+}
+
+.nav-item {
+  color: #9898A3;
+}
+
+.nav-item[aria-current='page'],
+.nav-item[aria-pressed='true'] {
+  color: var(--color-accent);
+}
+
+/* ---------- Cronômetro da Jornada ---------- */
+
+.cronometro-rotulo {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--color-accent);
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.cronometro-ponto {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--color-status);
+  box-shadow: 0 0 8px var(--color-status);
+}
+
+.cronometro-tempo {
+  color: var(--color-accent);
+  font-family: var(--font-display);
+  font-size: clamp(2.6rem, 13vw, 3.4rem);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.03em;
+  line-height: 1;
+  text-shadow: 0 0 20px rgba(242, 184, 75, 0.25);
+}
+
+/* ---------- Chip de sessão (Nova anotação / Jornada) ---------- */
+
+.mini-cronometro-rotulo {
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.mini-cronometro-tempo {
+  color: var(--color-accent);
+  font-family: var(--font-display);
+  font-variant-numeric: tabular-nums;
+}
+
 /* ---------- Tela de erro inicial ---------- */
 
 .erro-raiz {

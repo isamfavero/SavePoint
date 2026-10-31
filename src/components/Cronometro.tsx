@@ -16,5 +16,5 @@ export function Cronometro({ numero, duracaoMs, pausada = false }: CronometroPro
       </span>
       <p className="cronometro-tempo">{formatarDuracao(duracaoMs)}</p>
     </div>
-  )
+  );
 }

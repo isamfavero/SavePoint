@@ -226,13 +226,13 @@ export function Jornada() {
             <div className="jornada-resumo">
               <span className="meta-pill">
                 <Clock size={14} strokeWidth={1.75} aria-hidden="true" />
-                {carregandoSessoes ? '—' : formatarHoras(tempoTotalMs)}
+                {carregandoSessoes ? '—' : `${formatarHoras(tempoTotalMs)} jogadas`}
               </span>
               <span className="meta-pill">
                 <BookOpen size={14} strokeWidth={1.75} aria-hidden="true" />
                 {carregandoSessoes
                   ? '—'
-                  : formatarSessoes(estatisticas?.totalSessoes ?? 0)}
+                  : `${formatarSessoes(estatisticas?.totalSessoes ?? 0)} arquivadas`}
               </span>
             </div>
           </div>

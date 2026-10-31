@@ -1,11 +1,11 @@
 import {
   ArrowLeft,
   Check,
-  Gamepad2,
+  Diamond,
   Image as ImageIcon,
   Info,
   Plus,
-  Sparkles,
+  Search,
 } from 'lucide-react'
 import { useRef, useState } from 'react'
 import type { ChangeEvent, FormEvent } from 'react'
@@ -183,8 +183,8 @@ export function AdicionarJogo() {
           </button>
 
           <span className="selo-novo">
-            <Sparkles size={13} strokeWidth={1.75} aria-hidden="true" />
-            Novo registro
+            <Diamond size={11} strokeWidth={1.75} aria-hidden="true" />
+            NOVO REGISTRO
           </span>
         </div>
 
@@ -260,7 +260,7 @@ export function AdicionarJogo() {
               </span>
             </label>
             <span className="campo-input">
-              <Gamepad2 size={18} strokeWidth={1.75} aria-hidden="true" />
+              <Search size={18} strokeWidth={1.75} aria-hidden="true" />
               <input
                 id="nome-jogo"
                 type="text"

@@ -13,9 +13,8 @@ export function CabecalhoMarca() {
         </div>
       </div>
       <div className="marca-avatar" aria-label="Perfil do jogador">
-        <span className="marca-avatar-letra">S</span>
+        S
       </div>
     </header>
-  )
+  );
 }
-
