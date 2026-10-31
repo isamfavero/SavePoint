@@ -349,8 +349,10 @@ textarea {
   width: 44px;
   height: 44px;
   flex-shrink: 0;
-  object-fit: contain;
+  border-radius: 50%;
+  object-fit: cover;
   object-position: center;
+  overflow: hidden;
 }
 
 .marca-textos {
@@ -672,6 +674,23 @@ textarea {
   color: var(--color-text-muted);
 }
 
+.chip-situacao {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  padding: 3px 7px;
+  border: 1px solid rgba(225, 225, 237, 0.12);
+  border-radius: 999px;
+  background: rgba(12, 14, 22, 0.74);
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  line-height: 1;
+  text-transform: uppercase;
+  white-space: nowrap;
+  width: auto;
+}
+
 .chip-plataforma,
 .chip-situacao {
   position: absolute;
@@ -688,23 +707,6 @@ textarea {
   text-transform: uppercase;
 }
 
-.chip-plataforma {
-  left: 8px;
-  max-width: 44%;
-  overflow: hidden;
-  color: var(--color-text);
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.chip-situacao {
-  right: 8px;
-  max-width: 46%;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
 .situacao-jogando {
   color: var(--color-status);
 }
@@ -719,6 +721,33 @@ textarea {
 
 .situacao-quero {
   color: var(--color-accent-soft);
+}
+
+.jogo-card-info {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 6px;
+  color: var(--color-text-muted);
+  font-size: 0.7rem;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  line-height: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.jogo-card-info .jogo-card-plataforma {
+  color: var(--color-text);
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.jogo-card-info .jogo-card-generos {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 120px;
 }
 
 .jogo-card-corpo {
@@ -2594,10 +2623,14 @@ textarea {
   box-shadow: none;
 }
 
+.nav-item svg {
+  fill: none;
+}
+
 .nav-item[aria-current='page'] svg,
 .nav-item[aria-pressed='true'] svg {
   color: var(--color-accent);
-  fill: var(--color-accent);
+  fill: none;
 }
 
 /* ---------- Cronômetro da Jornada ---------- */

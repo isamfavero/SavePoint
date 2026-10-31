@@ -183,13 +183,18 @@ export function Biblioteca() {
                   >
                     <span className="jogo-card-capa">
                       <JogoCapa capa={jogo.capa} alt="" tamanhoIcone={26} />
-                      <span className="chip-plataforma">{jogo.plataforma}</span>
                       <span className={`chip-situacao ${classeDaSituacao(jogo.situacao)}`}>
                         {jogo.situacao}
                       </span>
                     </span>
 
                     <span className="jogo-card-corpo">
+                      {jogo.generos.length > 0 && (
+                        <div className="jogo-card-info">
+                          <span className="jogo-card-plataforma">{jogo.plataforma}</span>
+                          <span className="jogo-card-generos">{jogo.generos.join(' · ')}</span>
+                        </div>
+                      )}
                       <span className="jogo-card-nome">{jogo.nome}</span>
                       <span className="jogo-card-meta">
                         <span>
