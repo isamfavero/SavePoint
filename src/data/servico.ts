@@ -5,6 +5,7 @@ import {
   MS_POR_HORA,
 } from './calculos'
 import type { EstatisticasJogo } from './calculos'
+import { normalizarTexto } from '../dominio/biblioteca'
 import { ErroSavePoint } from './erros'
 import type { RepositorioSavePoint } from './repositorio'
 import type {
@@ -579,6 +580,26 @@ export class ServicoSavePoint {
       objetivosConcluidos,
       tagsUsadas: tagsResumidas.length > 0 ? [...tagsResumidas, adicional].filter((t) => t) : [],
     }
+  }
+
+  async buscarRegistros(
+    texto: string,
+    jogoId?: string,
+    tipos?: string[],
+    limite = 30,
+    deslocamento = 0,
+  ): Promise<Registro[]> {
+    const normalizado = normalizarTexto(texto)
+
+    const filtros: any = {
+      texto: normalizado,
+      jogoId,
+      tipos,
+      limite,
+      deslocamento,
+    }
+
+    return this.repositorio.buscarRegistros(filtros)
   }
 
   async calcularTempoTotalAoVivo(jogoId: string): Promise<number> {

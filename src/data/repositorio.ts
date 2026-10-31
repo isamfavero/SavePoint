@@ -21,6 +21,7 @@ export interface RepositorioSavePoint {
   obterRegistro(id: string): Promise<Registro | null>
   atualizarRegistro(registro: Registro): Promise<void>
   excluirRegistro(id: string): Promise<void>
+  buscarRegistros(filtros: { texto: string; jogoId?: string; tipos?: string[]; limite?: number; deslocamento?: number }): Promise<Registro[]>
 
   excluirJogoComDependentes(jogoId: string): Promise<void>
   fechar?(): Promise<void>

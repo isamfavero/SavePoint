@@ -1,5 +1,6 @@
 import type { RepositorioSavePoint } from './repositorio'
 import type { Jogo, Registro, Sessao } from './tipos'
+import { normalizarTexto } from '../dominio/biblioteca'
 
 const NOME_BANCO_PADRAO = 'savepoint'
 const VERSAO_BANCO = 1
@@ -203,5 +204,26 @@ export class RepositorioIndexedDb implements RepositorioSavePoint {
     idsRegistros.forEach((id) => registros.delete(id))
 
     await aguardarTransacao(transacao)
+  }
+
+  async buscarRegistros(
+    filtros: { texto: string; jogoId?: string; tipos?: string[]; limite?: number; deslocamento?: number }
+  ): Promise<Registro[]> {
+    const { texto, jogoId, tipos, limite = 30, deslocamento = 0 } = filtros
+
+    const registros = (await this.operar(LOJA_REGISTROS, 'readonly', (loja) =>
+      loja.getAll(),
+    )) as Registro[]
+
+    return registros
+      .filter((registro) => {
+        const matchTexto = registro.texto && normalizarTexto(registro.texto).includes(texto)
+        const matchJogo = !jogoId || registro.jogoId === jogoId
+        const matchTipos = !tipos || tipos.includes(registro.tipo)
+
+        return matchTexto && matchJogo && matchTipos
+      })
+      .sort((a, b) => b.dataHora.getTime() - a.dataHora.getTime())
+      .slice(deslocamento, limite + deslocamento)
   }
 }

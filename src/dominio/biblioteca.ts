@@ -1,5 +1,6 @@
-import { SITUACOES_JOGO } from '../data'
-import type { Jogo, SituacaoJogo } from '../data'
+import { SITUACOES_JOGO } from '../constantes'
+import type { SituacaoJogo } from '../constantes'
+import type { Jogo } from '../data/tipos'
 
 export const FILTROS_BIBLIOTECA = ['Todos', ...SITUACOES_JOGO] as const
 

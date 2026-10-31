@@ -1,8 +1,8 @@
 import { ChevronDown } from 'lucide-react'
 import { useState } from 'react'
 import { useServicoSavePoint } from '../contexts/ServicoContext'
-import type { Jogo, SituacaoJogo } from '../data'
-import { SITUACOES_JOGO } from '../data'
+import { SITUACOES_JOGO, type SituacaoJogo } from '../constantes'
+import type { Jogo } from '../data'
 
 type SituacaoSelectorProps = {
   jogo: Jogo | null

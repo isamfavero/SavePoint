@@ -2,13 +2,13 @@ import {
   BookOpen,
   Clock,
   Gamepad2,
-  Gem,
   LibraryBig,
   Play,
   Plus,
 } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { CabecalhoMarca } from '../components/CabecalhoMarca'
 import { JogoCapa } from '../components/JogoCapa'
 import { useJogoAtual } from '../contexts/JogoAtualContext'
 import {
@@ -56,17 +56,12 @@ export function Biblioteca() {
 
   return (
     <section className="page biblioteca" aria-label="Biblioteca">
-      <header className="marca">
-        <span className="marca-logo" aria-hidden="true">
-          <Gem size={20} strokeWidth={1.75} />
-        </span>
-        <span>
-          <span className="marca-nome">SavePoint</span>
-          <span className="marca-sub">Gaming journal</span>
-        </span>
-      </header>
+      <CabecalhoMarca />
 
-      <p className="saudacao">Bom te ver!</p>
+      <p className="saudacao">
+        <span className="saudacao-dot" aria-hidden="true" />
+        BOM TE VER!
+      </p>
       <h1 className="biblioteca-titulo">O que vamos jogar hoje?</h1>
 
       {carregando && <p className="biblioteca-aviso">Carregando sua biblioteca...</p>}

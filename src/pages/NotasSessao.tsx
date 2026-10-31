@@ -2,7 +2,7 @@ import { ArrowLeft, NotebookPen } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { useServicoSavePoint } from '../contexts/ServicoContext'
-import { TIPOS_REGISTRO } from '../data'
+import { TIPOS_REGISTRO } from '../constantes'
 import type { Jogo, Registro, Sessao } from '../data'
 
 const FORMATADOR_DATA = new Intl.DateTimeFormat('pt-BR', {

@@ -1,5 +1,6 @@
 import type { RepositorioSavePoint } from './repositorio'
 import type { Jogo, Registro, Sessao } from './tipos'
+import { normalizarTexto } from '../dominio/biblioteca'
 
 function clonar<T>(valor: T): T {
   return structuredClone(valor)
@@ -101,5 +102,23 @@ export class RepositorioMemoria implements RepositorioSavePoint {
     for (const [id, registro] of this.registros) {
       if (registro.jogoId === jogoId) this.registros.delete(id)
     }
+  }
+
+  async buscarRegistros(
+    filtros: { texto: string; jogoId?: string; tipos?: string[]; limite?: number; deslocamento?: number }
+  ): Promise<Registro[]> {
+    const { texto, jogoId, tipos, limite = 30, deslocamento = 0 } = filtros
+
+    return [...this.registros.values()]
+      .filter((registro) => {
+        const matchTexto = registro.texto && normalizarTexto(registro.texto).includes(texto)
+        const matchJogo = !jogoId || registro.jogoId === jogoId
+        const matchTipos = !tipos || tipos.includes(registro.tipo)
+
+        return matchTexto && matchJogo && matchTipos
+      })
+      .sort((a, b) => b.dataHora.getTime() - a.dataHora.getTime())
+      .slice(deslocamento, limite + deslocamento)
+      .map(clonar)
   }
 }
