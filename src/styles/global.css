@@ -344,36 +344,35 @@ textarea {
   margin-bottom: 30px;
 }
 
-.marca-logo {
-  display: grid;
+.marca-logo-img {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  object-fit: contain;
+  object-position: center;
+  background: #0c0e16;
   flex: 0 0 auto;
-  place-items: center;
-  width: 38px;
-  height: 38px;
-  border: 1px solid var(--color-border);
-  border-radius: 11px;
-  background: var(--color-surface);
-  color: var(--color-accent);
 }
 
 .marca-nome {
   display: block;
   font-family: var(--font-display);
   font-size: 1.02rem;
-  font-weight: 600;
+  font-weight: 700;
   letter-spacing: -0.02em;
   line-height: 1.1;
+  margin: 0;
 }
 
 .marca-sub {
   display: block;
-  margin-top: 3px;
   color: var(--color-text-muted);
   font-size: 0.58rem;
-  font-weight: 600;
+  font-weight: 700;
   letter-spacing: 0.18em;
   line-height: 1;
   text-transform: uppercase;
+  margin: 0;
 }
 
 .saudacao {
@@ -417,41 +416,37 @@ textarea {
   overflow: hidden;
   margin-bottom: 30px;
   border: 1px solid var(--color-border);
-  border-radius: 22px;
+  border-radius: 16px;
   background: var(--color-surface);
+  display: flex;
+  flex-direction: column;
 }
 
-.destaque-capa {
+.destaque-imagem {
   position: relative;
-  height: 212px;
+  width: 100%;
+  height: 190px;
   background: var(--color-bg-deep);
 }
 
-.destaque-capa::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(
-    180deg,
-    rgba(12, 14, 22, 0.08) 0%,
-    rgba(17, 19, 27, 0.2) 45%,
-    rgba(17, 19, 27, 0.96) 100%
-  );
+.destaque-imagem img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
 }
 
-.destaque-selos {
+.destaque-pilulas {
   position: absolute;
-  top: 12px;
-  right: 12px;
-  left: 12px;
-  z-index: 1;
+  top: 10px;
+  left: 10px;
+  right: 10px;
   display: flex;
-  align-items: center;
   justify-content: space-between;
   gap: 8px;
 }
 
-.selo-status,
+.selo-situacao,
 .selo-tempo {
   display: inline-flex;
   align-items: center;
@@ -465,6 +460,7 @@ textarea {
   letter-spacing: 0.09em;
   line-height: 1;
   text-transform: uppercase;
+  color: var(--color-text);
 }
 
 .selo-tempo {
@@ -482,10 +478,7 @@ textarea {
 }
 
 .destaque-corpo {
-  position: relative;
-  z-index: 1;
-  margin-top: -38px;
-  padding: 0 18px 18px;
+  padding: 16px;
 }
 
 .destaque-plataforma {
@@ -493,7 +486,7 @@ textarea {
   flex-wrap: wrap;
   align-items: center;
   gap: 8px;
-  margin: 0;
+  margin: 0 0 8px;
   color: var(--color-text-muted);
   font-size: 0.7rem;
   font-weight: 500;
@@ -513,7 +506,7 @@ textarea {
 }
 
 .destaque-nome {
-  margin: 8px 0 14px;
+  margin: 0 0 12px;
   font-family: var(--font-display);
   font-size: 1.55rem;
   font-weight: 600;
@@ -532,7 +525,7 @@ textarea {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 8px 10px;
+  padding: 7px 10px;
   border: 1px solid var(--color-border);
   border-radius: 10px;
   background: rgba(12, 14, 22, 0.42);
@@ -547,7 +540,7 @@ textarea {
   align-items: center;
   gap: 6px;
   margin-left: auto;
-  padding: 11px 17px;
+  padding: 10px 17px;
   border: 0;
   border-radius: 11px;
   background: var(--color-accent);
@@ -2514,30 +2507,6 @@ textarea {
   .jornada {
     padding-bottom: 116px;
   }
-}
-
-/* ---------- Cabeçalho da marca ---------- */
-
-.marca-logo-img {
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  object-fit: contain;
-  object-position: center;
-  background: #0c0e16;
-}
-
-.marca-nome {
-  font-weight: 700;
-}
-
-.marca-sub {
-  letter-spacing: 0.18em;
-  color: var(--color-text-muted);
-}
-
-.marca-avatar {
-  display: none;
 }
 
 /* ---------- Saudação e títulos ---------- */

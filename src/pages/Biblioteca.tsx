@@ -95,15 +95,15 @@ export function Biblioteca() {
 
       {destaque && (
         <article className="destaque" aria-label={`Jogo em destaque: ${destaque.nome}`}>
-          <div className="destaque-capa">
-            <JogoCapa capa={destaque.capa} alt={`Capa de ${destaque.nome}`} tamanhoIcone={40} />
-            <div className="destaque-selos">
-              <span className={`selo-status ${classeDaSituacao(destaque.situacao)}`}>
+          <div className="destaque-imagem">
+            <JogoCapa capa={destaque.capa} alt={`Capa de ${destaque.nome}`} />
+            <div className="destaque-pilulas">
+              <span className={`selo-situacao ${classeDaSituacao(destaque.situacao)}`}>
                 <span className="selo-ponto" aria-hidden="true" />
                 {destaque.situacao === 'Jogando' ? 'Jogando agora' : destaque.situacao}
               </span>
               <span className="selo-tempo">
-                <Clock size={13} strokeWidth={1.75} aria-hidden="true" />
+                <Clock size={12} strokeWidth={1.5} aria-hidden="true" />
                 {formatarTempoRelativo(destaque.atualizadoEm)}
               </span>
             </div>
@@ -120,13 +120,13 @@ export function Biblioteca() {
 
             <div className="destaque-rodape">
               <span className="meta-pill">
-                <Clock size={14} strokeWidth={1.75} aria-hidden="true" />
+                <Clock size={13} strokeWidth={1.5} aria-hidden="true" />
                 {formatarHoras(
                   estatisticasPorJogo.get(destaque.id)?.duracaoTotalMs ?? 0,
                 )}
               </span>
               <span className="meta-pill">
-                <BookOpen size={14} strokeWidth={1.75} aria-hidden="true" />
+                <BookOpen size={13} strokeWidth={1.5} aria-hidden="true" />
                 {formatarSessoes(
                   estatisticasPorJogo.get(destaque.id)?.totalSessoes ?? 0,
                 )}
@@ -136,7 +136,7 @@ export function Biblioteca() {
                 className="botao-retomar"
                 onClick={() => abrirJogo(destaque)}
               >
-                <Play size={15} strokeWidth={2} aria-hidden="true" />
+                <Play size={14} strokeWidth={2} aria-hidden="true" />
                 Retomar
               </button>
             </div>
