@@ -1,7 +1,17 @@
-import { BookOpen, ChartLine, Clock, Pause, Play, Square } from 'lucide-react'
+import {
+  BookOpen,
+  ChartLine,
+  ChevronRight,
+  Clock,
+  NotebookPen,
+  Pause,
+  Play,
+  Square,
+} from 'lucide-react'
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { Cronometro } from '../components/Cronometro'
+import { FabAnotar } from '../components/FabAnotar'
 import { useSessaoAtiva } from '../contexts/SessaoAtivaContext'
 import {
   classeDaSituacao,
@@ -95,7 +105,7 @@ export function Jornada() {
   }
 
   return (
-    <section className="page" aria-label="Jornada">
+    <section className="page jornada" aria-label="Jornada">
       <header className="page-header">
         <span className="page-icon" aria-hidden="true">
           <ChartLine size={22} strokeWidth={1.75} />
@@ -242,6 +252,22 @@ export function Jornada() {
         </div>
       )}
 
+      {sessao && (
+        <Link className="jornada-notas" to={`/jornada/sessao/${sessao.id}/notas`}>
+          <span className="jornada-notas-icone" aria-hidden="true">
+            <NotebookPen size={19} strokeWidth={1.75} />
+          </span>
+          <span className="jornada-notas-texto">
+            <strong>Notas da sessão atual</strong>
+            <small>
+              Sessão {sessao.numero}
+              {jogoDaSessao ? ` · ${jogoDaSessao.nome}` : ''}
+            </small>
+          </span>
+          <ChevronRight size={18} strokeWidth={1.75} aria-hidden="true" />
+        </Link>
+      )}
+
       <div className="placeholder-card">
         <span className="placeholder-label">
           <span className="placeholder-dot" aria-hidden="true" />
@@ -251,6 +277,8 @@ export function Jornada() {
           A trilha, os objetivos e o diário de sessões chegam nas próximas fatias.
         </p>
       </div>
+
+      <FabAnotar jogo={jogo} />
     </section>
   )
 }

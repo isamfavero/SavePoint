@@ -25,6 +25,44 @@ function normalizarGeneros(generos: string[]): string[] {
   return [...new Set(generos.map((genero) => genero.trim()).filter(Boolean))]
 }
 
+function normalizarTag(tag: string): string | null {
+  const valor = tag.trim()
+
+  if (!valor) return null
+
+  const semCerquilha = valor.replace(/^#+/, '')
+
+  if (!semCerquilha) return null
+
+  if (/\s/.test(semCerquilha)) {
+    throw new ErroSavePoint('DADOS_INVALIDOS', 'Tags não podem conter espaços.')
+  }
+
+  return `#${semCerquilha.toLowerCase()}`
+}
+
+function normalizarTags(tags: string[] = []): string[] {
+  const normalizadas = new Set<string>()
+
+  for (const tag of tags) {
+    const normalizada = normalizarTag(tag)
+
+    if (normalizada) normalizadas.add(normalizada)
+  }
+
+  return [...normalizadas]
+}
+
+function validarTextoRegistro(texto: string): string {
+  const limpo = texto.trim()
+
+  if (!limpo) {
+    throw new ErroSavePoint('DADOS_INVALIDOS', 'O texto da anotação é obrigatório.')
+  }
+
+  return limpo
+}
+
 export class ServicoSavePoint {
   private readonly repositorio: RepositorioSavePoint
   private readonly gerarId: () => string
@@ -265,8 +303,8 @@ export class ServicoSavePoint {
       jogoId: dados.jogoId,
       sessaoId: dados.sessaoId,
       tipo: dados.tipo,
-      texto: dados.texto,
-      tags: dados.tags ?? [],
+      texto: validarTextoRegistro(dados.texto),
+      tags: normalizarTags(dados.tags),
       dataHora: dados.dataHora ?? this.agora(),
     }
 
@@ -295,6 +333,43 @@ export class ServicoSavePoint {
     return this.repositorio.listarRegistrosPorSessao(sessaoId)
   }
 
+  async listarTagsUsadas(jogoId: string): Promise<string[]> {
+    const registros = await this.repositorio.listarRegistrosPorJogo(jogoId)
+    const contagem = new Map<string, { tag: string; total: number; ordem: number }>()
+
+    for (const registro of registros) {
+      const tagsDoRegistro = new Set<string>()
+
+      for (const tag of registro.tags) {
+        try {
+          const normalizada = normalizarTag(tag)
+
+          if (normalizada) tagsDoRegistro.add(normalizada)
+        } catch {
+          continue
+        }
+      }
+
+      for (const normalizada of tagsDoRegistro) {
+        const atual = contagem.get(normalizada)
+
+        if (atual) {
+          atual.total += 1
+        } else {
+          contagem.set(normalizada, {
+            tag: normalizada,
+            total: 1,
+            ordem: contagem.size,
+          })
+        }
+      }
+    }
+
+    return [...contagem.values()]
+      .sort((a, b) => b.total - a.total || a.ordem - b.ordem)
+      .map((item) => item.tag)
+  }
+
   async obterRegistro(id: string): Promise<Registro | null> {
     return this.repositorio.obterRegistro(id)
   }
@@ -317,8 +392,11 @@ export class ServicoSavePoint {
       jogoId,
       sessaoId,
       tipo,
-      texto: dados.texto ?? existente.texto,
-      tags: dados.tags ?? existente.tags,
+      texto:
+        dados.texto !== undefined
+          ? validarTextoRegistro(dados.texto)
+          : existente.texto,
+      tags: dados.tags !== undefined ? normalizarTags(dados.tags) : existente.tags,
       dataHora: dados.dataHora ?? existente.dataHora,
     }
 

@@ -5,6 +5,7 @@ import { RepositorioIndexedDb } from '../repositorio-indexeddb'
 import { RepositorioMemoria } from '../repositorio-memoria'
 import type { RepositorioSavePoint } from '../repositorio'
 import { ServicoSavePoint } from '../servico'
+import { TIPOS_REGISTRO } from '../tipos'
 import type { Jogo } from '../tipos'
 
 const MINUTO = 60_000
@@ -288,6 +289,110 @@ describe.each(implementacoes)('ServicoSavePoint com repositório em %s', (_nome,
     })
 
     expect(comSessao.concluidoSessaoId).toBe(sessao.id)
+  })
+
+  it('cria registros dos oito tipos e mantém Objetivo pendente', async () => {
+    const { jogo, sessao } = await prepararJogoESessao(ctx)
+
+    for (const tipo of TIPOS_REGISTRO) {
+      const registro = await ctx.servico.criarRegistro({
+        jogoId: jogo.id,
+        sessaoId: sessao.id,
+        tipo,
+        texto: `Anotação de ${tipo}`,
+      })
+
+      expect(registro.tipo).toBe(tipo)
+
+      if (tipo === 'Objetivo') {
+        expect(registro.concluido).toBe(false)
+        expect(registro.concluidoEm).toBeNull()
+        expect(registro.concluidoSessaoId).toBeNull()
+      } else {
+        expect(registro).not.toHaveProperty('concluido')
+        expect(registro).not.toHaveProperty('concluidoEm')
+        expect(registro).not.toHaveProperty('concluidoSessaoId')
+      }
+    }
+
+    const salvos = await ctx.servico.listarRegistrosDaSessao(sessao.id)
+    expect(salvos).toHaveLength(TIPOS_REGISTRO.length)
+    expect(new Set(salvos.map((registro) => registro.tipo))).toEqual(
+      new Set(TIPOS_REGISTRO),
+    )
+  })
+
+  it('recusa anotação sem texto na criação e na atualização', async () => {
+    const { jogo, sessao } = await prepararJogoESessao(ctx)
+
+    await expect(
+      ctx.servico.criarRegistro({
+        jogoId: jogo.id,
+        sessaoId: sessao.id,
+        tipo: 'Diário',
+        texto: '   ',
+      }),
+    ).rejects.toMatchObject({
+      codigo: 'DADOS_INVALIDOS',
+      message: 'O texto da anotação é obrigatório.',
+    })
+
+    const registro = await ctx.servico.criarRegistro({
+      jogoId: jogo.id,
+      sessaoId: sessao.id,
+      tipo: 'Diário',
+      texto: '  texto válido  ',
+    })
+
+    expect(registro.texto).toBe('texto válido')
+
+    await expect(
+      ctx.servico.atualizarRegistro(registro.id, { texto: '\n\t' }),
+    ).rejects.toMatchObject({ codigo: 'DADOS_INVALIDOS' })
+  })
+
+  it('normaliza tags e sugere as mais usadas, sem repetir maiúsculas', async () => {
+    const { jogo, sessao } = await prepararJogoESessao(ctx)
+
+    const primeiro = await ctx.servico.criarRegistro({
+      jogoId: jogo.id,
+      sessaoId: sessao.id,
+      tipo: 'Diário',
+      texto: 'primeiro',
+      tags: ['#Lore', '#dica', '#lore'],
+    })
+
+    expect(primeiro.tags).toEqual(['#lore', '#dica'])
+
+    await ctx.servico.criarRegistro({
+      jogoId: jogo.id,
+      sessaoId: sessao.id,
+      tipo: 'Puzzles',
+      texto: 'segundo',
+      tags: ['#lore', '#Código'],
+    })
+
+    await ctx.servico.criarRegistro({
+      jogoId: jogo.id,
+      sessaoId: sessao.id,
+      tipo: 'Lembretes',
+      texto: 'terceiro',
+      tags: ['#LORE', '#dica'],
+    })
+
+    const tags = await ctx.servico.listarTagsUsadas(jogo.id)
+
+    expect(tags).toEqual(['#lore', '#dica', '#código'])
+
+    await expect(
+      ctx.servico.criarRegistro({
+        jogoId: jogo.id,
+        sessaoId: sessao.id,
+        tipo: 'Diário',
+        texto: 'tag inválida',
+        tags: ['#lore nova'],
+      }),
+    ).rejects.toMatchObject({ codigo: 'DADOS_INVALIDOS' })
   })
 
   it('apaga sessões e registros ao apagar o jogo', async () => {
