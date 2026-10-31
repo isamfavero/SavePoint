@@ -1,6 +1,6 @@
 import {
   BookOpen,
-  ChartLine,
+  ChevronLeft,
   Clock,
   NotebookPen,
   Pause,
@@ -9,9 +9,11 @@ import {
 } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import { CabecalhoMarca } from '../components/CabecalhoMarca'
 import { Cronometro } from '../components/Cronometro'
 import { EstatisticasJogo } from '../components/EstatisticasJogo'
 import { FabAnotar } from '../components/FabAnotar'
+import { JogoCapa } from '../components/JogoCapa'
 import { ObjetivosLista } from '../components/ObjetivosLista'
 import { SituacaoSelector } from '../components/SituacaoSelector'
 import { Tabs } from '../components/Tabs'
@@ -196,16 +198,19 @@ export function Jornada() {
 
   return (
     <section className="page jornada" aria-label="Jornada">
-      <header className="page-header">
-        <span className="page-icon" aria-hidden="true">
-          <ChartLine size={22} strokeWidth={1.75} />
-        </span>
-        <p className="page-kicker">SavePoint</p>
-        <h1 className="page-title">Jornada</h1>
-        <p className="page-description">
-          Acompanhe o jogo atual e o tempo que você já dedicou a ele.
-        </p>
-      </header>
+      <CabecalhoMarca />
+
+      <a
+        href="/biblioteca"
+        onClick={(evento) => {
+          evento.preventDefault()
+          navigate('/biblioteca')
+        }}
+        className="link-voltar"
+      >
+        <ChevronLeft size={16} strokeWidth={1.75} aria-hidden="true" />
+        voltar à biblioteca
+      </a>
 
       {carregando && <p className="biblioteca-aviso">Carregando o jogo atual...</p>}
 
@@ -216,24 +221,30 @@ export function Jornada() {
       {!carregando && !erro && jogo && (
         <>
           <div className="jornada-atual">
-            <span className="jornada-rotulo">Jogo atual</span>
-            <h2 className="jornada-nome">{jogo.nome}</h2>
-            <p className="jornada-info">
-              {jogo.plataforma}
-              <SituacaoSelector jogo={jogo} />
-            </p>
+            <div className="jogo-miniatura">
+              <JogoCapa capa={jogo.capa} alt={`Capa de ${jogo.nome}`} />
+            </div>
 
-            <div className="jornada-resumo">
-              <span className="meta-pill">
-                <Clock size={14} strokeWidth={1.75} aria-hidden="true" />
-                {carregandoSessoes ? '—' : `${formatarHoras(tempoTotalMs)} jogadas`}
-              </span>
-              <span className="meta-pill">
-                <BookOpen size={14} strokeWidth={1.75} aria-hidden="true" />
-                {carregandoSessoes
-                  ? '—'
-                  : `${formatarSessoes(estatisticas?.totalSessoes ?? 0)} arquivadas`}
-              </span>
+            <div className="jogo-info">
+              <span className="jogo-rotulo">JOGO ATUAL</span>
+              <h2 className="jogo-titulo">{jogo.nome}</h2>
+              <p className="jogo-info">
+                {jogo.plataforma}
+                <SituacaoSelector jogo={jogo} />
+              </p>
+
+              <div className="jornada-resumo">
+                <span className="meta-pill">
+                  <Clock size={13} strokeWidth={1.5} aria-hidden="true" />
+                  {carregandoSessoes ? '—' : `${formatarHoras(tempoTotalMs)} jogadas`}
+                </span>
+                <span className="meta-pill">
+                  <BookOpen size={13} strokeWidth={1.5} aria-hidden="true" />
+                  {carregandoSessoes
+                    ? '—'
+                    : `${formatarSessoes(estatisticas?.totalSessoes ?? 0)} sessões arquivadas`}
+                </span>
+              </div>
             </div>
           </div>
 

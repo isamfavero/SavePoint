@@ -11,7 +11,7 @@ export function Cronometro({ numero, duracaoMs, pausada = false }: CronometroPro
     <div className={`cronometro${pausada ? ' cronometro-pausado' : ''}`}>
       <span className="cronometro-rotulo">
         <span className="cronometro-ponto" aria-hidden="true" />
-        Sessão {numero}
+        SESSÃO {numero}
         {pausada && <span className="cronometro-estado">Pausada</span>}
       </span>
       <p className="cronometro-tempo">{formatarDuracao(duracaoMs)}</p>

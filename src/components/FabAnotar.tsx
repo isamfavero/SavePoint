@@ -53,11 +53,12 @@ export function FabAnotar({ jogo }: FabAnotarProps) {
     <>
       <button
         type="button"
-        className="fab"
+        className={`fab${sessao ? ' fab-ativa' : ''}`}
         onClick={abrirAnotacao}
         aria-label="Nova anotação"
       >
         <SquarePen size={23} strokeWidth={1.9} aria-hidden="true" />
+        {sessao && <span className="fab-ponto" aria-hidden="true" />}
       </button>
 
       {modalAberto && (
