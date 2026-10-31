@@ -115,8 +115,10 @@ describe('formatação', () => {
     expect(formatarHoras(3 * 3_600_000)).toBe('3h')
   })
 
-  it('flexiona sessões', () => {
+  it('flexiona sessões, incluindo zero e uma', () => {
+    expect(formatarSessoes(0)).toBe('0 sessões')
     expect(formatarSessoes(1)).toBe('1 sessão')
+    expect(formatarSessoes(2)).toBe('2 sessões')
     expect(formatarSessoes(4)).toBe('4 sessões')
   })
 

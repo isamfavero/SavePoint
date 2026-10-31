@@ -6,26 +6,28 @@ type NavTab = {
   label: string
   to: string
   icon: LucideIcon
-  hasSessionIndicator?: boolean
 }
 
 const tabs: NavTab[] = [
   { label: 'Biblioteca', to: '/biblioteca', icon: BookOpen },
-  { label: 'Jornada', to: '/jornada', icon: ChartLine, hasSessionIndicator: true },
+  { label: 'Jornada', to: '/jornada', icon: ChartLine },
   { label: 'Buscar', to: '/buscar', icon: Search },
 ]
 
 export function BottomNav() {
   return (
     <nav className="bottom-nav" aria-label="Navegação principal">
-      {tabs.map(({ label, to, icon: Icon, hasSessionIndicator }) => (
+      {tabs.map(({ label, to, icon: Icon }) => (
         <NavLink key={to} to={to} className="nav-item">
-          <span className="nav-icon">
-            <Icon size={22} strokeWidth={1.75} aria-hidden="true" />
-            {/* Reservado para o ponto de sessão ativa. Ainda sem função. */}
-            {hasSessionIndicator && <span className="nav-session-dot" aria-hidden="true" />}
-          </span>
-          <span>{label}</span>
+          {({ isActive }) => (
+            <>
+              <span className="nav-icon">
+                <Icon size={22} strokeWidth={1.75} aria-hidden="true" />
+                {isActive && <span className="nav-active-dot" aria-hidden="true" />}
+              </span>
+              <span>{label}</span>
+            </>
+          )}
         </NavLink>
       ))}
     </nav>

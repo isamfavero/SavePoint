@@ -30,20 +30,24 @@
 
 html {
   min-width: 320px;
+  height: 100%;
   background: var(--color-bg-deep);
 }
 
 body {
   min-width: 320px;
+  height: 100dvh;
   min-height: 100dvh;
   margin: 0;
-  overflow-x: hidden;
+  overflow: hidden;
+  overscroll-behavior: none;
   background: var(--color-bg-deep);
   color: var(--color-text);
 }
 
 #root {
-  min-height: 100dvh;
+  height: 100%;
+  min-height: 0;
 }
 
 a {
@@ -63,14 +67,20 @@ textarea {
   flex-direction: column;
   width: 100%;
   max-width: var(--app-width);
-  min-height: 100dvh;
+  height: 100%;
+  min-height: 0;
   margin: 0 auto;
+  overflow: hidden;
   background: var(--color-bg);
 }
 
 .app-main {
   flex: 1;
-  padding: 40px 20px calc(104px + env(safe-area-inset-bottom));
+  min-height: 0;
+  padding: 40px 20px 40px;
+  overflow-y: auto;
+  overscroll-behavior-y: contain;
+  -webkit-overflow-scrolling: touch;
 }
 
 .page {
@@ -152,17 +162,14 @@ textarea {
 }
 
 .bottom-nav {
-  position: fixed;
-  bottom: 0;
-  left: 50%;
+  position: relative;
   z-index: 10;
   display: grid;
+  flex: 0 0 auto;
   grid-template-columns: repeat(3, 1fr);
   gap: 4px;
   width: 100%;
-  max-width: var(--app-width);
   padding: 8px 12px calc(8px + env(safe-area-inset-bottom));
-  transform: translateX(-50%);
   border-top: 1px solid var(--color-border);
   background: var(--color-bg);
 }
@@ -206,7 +213,7 @@ textarea {
   height: 24px;
 }
 
-.nav-session-dot {
+.nav-active-dot {
   position: absolute;
   top: -1px;
   right: -1px;
@@ -223,12 +230,12 @@ textarea {
   }
 
   #root {
-    min-height: calc(100dvh - 48px);
+    height: calc(100dvh - 48px);
   }
 
   .app-shell {
-    min-height: calc(100dvh - 48px);
-    overflow: hidden;
+    height: 100%;
+    min-height: 0;
     border: 1px solid var(--color-border);
     border-radius: 24px;
     box-shadow: 0 24px 80px rgba(0, 0, 0, 0.35);
@@ -236,11 +243,10 @@ textarea {
 
   .app-main {
     padding-top: 44px;
-    padding-bottom: 104px;
+    padding-bottom: 40px;
   }
 
   .bottom-nav {
-    bottom: 24px;
     border-radius: 0 0 23px 23px;
   }
 }
@@ -802,7 +808,7 @@ textarea {
 /* ---------- Adicionar jogo ---------- */
 
 .formulario-main {
-  padding-bottom: calc(160px + env(safe-area-inset-bottom));
+  padding-bottom: 32px;
 }
 
 .formulario-topo {
@@ -1078,17 +1084,14 @@ textarea {
 }
 
 .form-acoes {
-  position: fixed;
-  bottom: 0;
-  left: 50%;
+  position: relative;
   z-index: 10;
   display: flex;
+  flex: 0 0 auto;
   flex-direction: column;
   gap: 4px;
   width: 100%;
-  max-width: var(--app-width);
   padding: 12px 20px calc(12px + env(safe-area-inset-bottom));
-  transform: translateX(-50%);
   border-top: 1px solid var(--color-border);
   background: var(--color-bg);
 }
@@ -1235,7 +1238,6 @@ textarea {
   }
 
   .form-acoes {
-    bottom: 24px;
     border-radius: 0 0 23px 23px;
   }
 }
