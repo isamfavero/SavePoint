@@ -1,26 +1,32 @@
 import {
   BookOpen,
   ChartLine,
-  ChevronRight,
   Clock,
   NotebookPen,
   Pause,
   Play,
   Square,
 } from 'lucide-react'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { Cronometro } from '../components/Cronometro'
+import { EstatisticasJogo } from '../components/EstatisticasJogo'
 import { FabAnotar } from '../components/FabAnotar'
+import { ObjetivosLista } from '../components/ObjetivosLista'
+import { SituacaoSelector } from '../components/SituacaoSelector'
+import { Tabs } from '../components/Tabs'
+import { TrilhaCronologica } from '../components/TrilhaCronologica'
 import { useSessaoAtiva } from '../contexts/SessaoAtivaContext'
+import { useServicoSavePoint } from '../contexts/ServicoContext'
 import {
-  classeDaSituacao,
+  formatarData,
   formatarHoras,
   formatarSessoes,
 } from '../dominio/biblioteca'
 import { salvarInstanteEncerramento } from '../estado/encerramento'
 import { useJogoAtualDetalhe } from '../hooks/useJogoAtualDetalhe'
 import { useSessoesDoJogo } from '../hooks/useSessoesDoJogo'
+import type { Registro } from '../data'
 
 type AcaoEmAndamento = 'iniciar' | 'pausar' | 'retomar' | null
 
@@ -28,7 +34,15 @@ function mensagemDoErro(erro: unknown, padrao: string): string {
   return erro instanceof Error && erro.message ? erro.message : padrao
 }
 
+const ABAS_JORNADA = [
+  { id: 'trilha', label: 'Trilha' },
+  { id: 'objetivos', label: 'Objetivos' },
+  { id: 'estatisticas', label: 'Estatísticas' },
+  { id: 'diario', label: 'Diário' },
+]
+
 export function Jornada() {
+  const servico = useServicoSavePoint()
   const { jogo, carregando, erro } = useJogoAtualDetalhe()
   const {
     sessao,
@@ -44,15 +58,91 @@ export function Jornada() {
     tempoTotalMs,
     carregando: carregandoSessoes,
     erro: erroSessoes,
+    sessoes,
   } = useSessoesDoJogo(jogo?.id ?? null)
   const navigate = useNavigate()
   const [acaoEmAndamento, setAcaoEmAndamento] = useState<AcaoEmAndamento>(null)
   const [erroAcao, setErroAcao] = useState<string | null>(null)
+  const [registros, setRegistros] = useState<Registro[]>([])
+  const [horasNaSemana, setHorasNaSemana] = useState(0)
+  const [aba, setAba] = useState<'trilha' | 'objetivos' | 'estatisticas' | 'diario'>('trilha')
+  const [ultimosResumos, setUltimosResumos] = useState<
+    Array<{
+      totalAnotacoes: number
+      marcos: number
+      regioesMapeadas: number
+      objetivosConcluidos: number
+      tagsUsadas: string[]
+    }>
+  >([])
+  const [totalSessoesEncerradas, setTotalSessoesEncerradas] = useState(0)
 
   const sessaoDoJogoAtual =
     sessao && jogo && sessao.jogoId === jogo.id ? sessao : null
   const sessaoEmOutroJogo =
     sessao && jogo && sessao.jogoId !== jogo.id ? sessao : null
+
+  const sessoesOrdenadas = [...sessoes].sort((a, b) => b.numero - a.numero)
+
+  const sessoesEncerradas = sessoes.filter((s) => s.fim !== null).sort(
+    (a, b) => b.numero - a.numero,
+  )
+
+  const registrosPorSessao = registros.reduce<Record<string, Registro[]>>(
+    (acc, registro) => {
+      acc[registro.sessaoId] = [...(acc[registro.sessaoId] ?? []), registro]
+      return acc
+    },
+    {},
+  )
+
+  const objetivos = registros.filter(
+    (registro) => registro.tipo === 'Objetivo',
+  )
+
+  const sessaoAtivaResumo =
+    sessaoDoJogoAtual
+      ? { id: sessaoDoJogoAtual.id, numero: sessaoDoJogoAtual.numero }
+      : null
+
+  const horasTotais = estatisticas?.horasTotais ?? 0
+
+  useEffect(() => {
+    if (!jogo?.id) {
+      setRegistros([])
+      return
+    }
+
+    servico
+      .listarRegistrosDoJogo(jogo.id)
+      .then((lista) => {
+        setRegistros(lista)
+      })
+      .catch(() => {
+        setRegistros([])
+      })
+
+    servico
+      .calcularHorasNaSemana(jogo.id)
+      .then((horas) => {
+        setHorasNaSemana(horas)
+      })
+      .catch(() => {
+        setHorasNaSemana(0)
+      })
+
+    // Calcular resumos de sessões para o Diário
+    // Usar as sessões já obtidas do hook
+    const sessoesEncerradasDoHook = sessoes.filter((s) => s.fim !== null)
+    const ultimasTres = sessoesEncerradasDoHook.slice(0, 3)
+    const resumosPromise = ultimasTres.map((sessao) =>
+          servico.resumirSessao(sessao.id),
+        )
+        Promise.all(resumosPromise).then((resumos) => {
+          setUltimosResumos(resumos)
+          setTotalSessoesEncerradas(sessoesEncerradasDoHook.length)
+        })
+  }, [jogo?.id, servico])
 
   async function aoIniciarSessao() {
     if (!jogo) return
@@ -120,9 +210,7 @@ export function Jornada() {
       {carregando && <p className="biblioteca-aviso">Carregando o jogo atual...</p>}
 
       {erro && (
-        <p className="biblioteca-aviso" role="alert">
-          {erro}
-        </p>
+        <p className="biblioteca-aviso" role="alert">{erro}</p>
       )}
 
       {!carregando && !erro && jogo && (
@@ -132,9 +220,7 @@ export function Jornada() {
             <h2 className="jornada-nome">{jogo.nome}</h2>
             <p className="jornada-info">
               {jogo.plataforma}
-              <span className={`chip-situacao-inline ${classeDaSituacao(jogo.situacao)}`}>
-                {jogo.situacao}
-              </span>
+              <SituacaoSelector jogo={jogo} />
             </p>
 
             <div className="jornada-resumo">
@@ -226,17 +312,197 @@ export function Jornada() {
             )}
 
             {erroSessoes && (
-              <p className="campo-erro" role="alert">
-                {erroSessoes}
-              </p>
+              <p className="campo-erro" role="alert">{erroSessoes}</p>
             )}
 
             {erroAcao && (
-              <p className="campo-erro" role="alert">
-                {erroAcao}
-              </p>
+              <p className="campo-erro" role="alert">{erroAcao}</p>
             )}
           </div>
+
+          <Tabs
+            tabs={ABAS_JORNADA}
+            valorInicial="trilha"
+            aoMudar={(id: string) => setAba(id as 'trilha' | 'objetivos' | 'estatisticas' | 'diario')}
+          />
+
+          {aba === 'trilha' && (
+            <TrilhaCronologica
+              jogoId={jogo.id}
+              sessoes={sessoesOrdenadas}
+              registrosPorSessao={registrosPorSessao}
+              sessaoAtiva={sessaoDoJogoAtual ?? null}
+              horasTotais={horasTotais}
+            />
+          )}
+
+          {aba === 'objetivos' && (
+            <ObjetivosLista
+              jogoId={jogo.id}
+              objetivos={objetivos}
+              sessaoAtiva={sessaoAtivaResumo}
+              aoIniciarSessao={aoIniciarSessao}
+            />
+          )}
+
+          {aba === 'estatisticas' && (
+            <EstatisticasJogo
+              estatisticas={{
+                horasTotais: estatisticas?.horasTotais ?? 0,
+                totalSessoes: estatisticas?.totalSessoes ?? 0,
+                mediaHorasPorSessao: estatisticas?.mediaHorasPorSessao ?? 0,
+                duracaoTotalMs: estatisticas?.duracaoTotalMs ?? 0,
+                mediaPorSessaoMs: estatisticas?.mediaPorSessaoMs ?? 0,
+                sessoesEmAndamento: estatisticas?.sessoesEmAndamento ?? 0,
+              }}
+              horasNaSemana={horasNaSemana}
+              totalRegistros={registros.length}
+            />
+          )}
+
+          {aba === 'diario' && (
+            <div className="jornada-diario">
+              {totalSessoesEncerradas === 0 && (
+                <div className="estado-vazio diario-vazio">
+                  <span className="estado-vazio-icone" aria-hidden="true">
+                    <BookOpen size={32} strokeWidth={1.75} />
+                  </span>
+                  <h2>Diário de sessões</h2>
+                  <p>
+                    Ainda não há sessões encerradas. Complete sua primeira sessão
+                    para começar a anotar.
+                  </p>
+                </div>
+              )}
+              <div className="sessoes-lista">
+                {ultimosResumos.map((resumo, index) => {
+                  // Obter a sessão do índice
+                  const sessaoInfo = sessoesEncerradas[index] || null
+                  if (!sessaoInfo) return null
+                  const duracao = sessaoInfo.fim
+                    ? formatarHoras((sessaoInfo.fim.getTime() - sessaoInfo.inicio.getTime()))
+                    : '—'
+
+                  const tagsDisplay =
+                    resumo.tagsUsadas.length > 0
+                      ? resumo.tagsUsadas.join(', ')
+                      : ''
+
+                  return (
+                    <div
+                      key={index}
+                      className="card-sessao"
+                      role="button"
+                      tabIndex={0}
+                      onClick={() => navigate(`/jornada/sessao/${sessaoInfo.id}/notas`)}
+                    >
+                      <div className="card-cabecalho">
+                        <span className="card-numero">
+                          Sessão {sessaoInfo.numero}
+                        </span>
+                        <span className="card-data">
+                          {formatarData(sessaoInfo.inicio)}
+                        </span>
+                        <span className="card-duracao">{duracao}</span>
+                      </div>
+
+                      <div className="card-conteudo">
+                        <p className="card-oQueFiz">
+                          {sessaoInfo.oQueFiz || '—'}
+                        </p>
+                        <p className="card-oOndeParei">
+                          {sessaoInfo.ondeParei || '—'}
+                        </p>
+                        <p className="card-proxPasso">
+                          {sessaoInfo.proximoPasso || '—'}
+                        </p>
+                      </div>
+
+                      <div className="card-meta">
+                        <span className="card-anotacoes">
+                          {resumo.totalAnotacoes} anota{'cao'}{resumo.totalAnotacoes !== 1 ? 's' : ''}
+                        </span>
+                        <span className="card-selos">
+                          {resumo.marcos > 0 && (
+                            <span className="selo">
+                              {resumo.marcos} Marco{resumo.marcos !== 1 ? 's' : ''}
+                            </span>
+                          )}
+                          {resumo.regioesMapeadas > 0 && (
+                            <span className="selo">
+                              {resumo.regioesMapeadas} Região{
+                                resumo.regioesMapeadas !== 1 ? 's' : ''
+                              } mapeada
+                            </span>
+                          )}
+                          {resumo.objetivosConcluidos > 0 && (
+                            <span className="selo">
+                              {resumo.objetivosConcluidos} Objetivo{
+                                resumo.objetivosConcluidos !== 1 ? 's' : ''
+                              } concluido
+                            </span>
+                          )}
+                        </span>
+                      </div>
+
+                      <div className="card-tags">
+                        {tagsDisplay ? (
+                          <span className="tags-texto">{tagsDisplay}</span>
+                        ) : (
+                          <span className="tags-vazio">—</span>
+                        )}
+                      </div>
+
+                      {resumo.totalAnotacoes > 0 ? (
+                        <button
+                          className="botao-mini botao-terciario"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            navigate(`/jornada/sessao/${sessaoInfo.id}/notas`)
+                          }}
+                        >
+                          Abrir notas
+                        </button>
+                      ) : (
+                        <span className="botao-desativado">Sem notas</span>
+                      )}
+                    </div>
+                  )
+                })}
+              </div>
+
+              {totalSessoesEncerradas > 3 && (
+                <div className="ver-todas">
+                  <button
+                    className="botao-link"
+                    onClick={() => {
+                      navigate('/jornada/todas-sessoes')
+                    }}
+                  >
+                    Ver todas as {totalSessoesEncerradas} sessões
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+
+          {sessao && (
+            <Link className="jornada-notas" to={`/jornada/sessao/${sessao.id}/notas`}>
+              <span className="jornada-notas-icone" aria-hidden="true">
+                <NotebookPen size={19} strokeWidth={1.75} />
+              </span>
+              <span className="jornada-notas-texto">
+                <strong>Notas da sessão atual</strong>
+                <small>
+                  Sessão {sessao.numero}
+                  {jogoDaSessao ? ` · ${jogoDaSessao.nome}` : ''}
+                </small>
+              </span>
+              <span aria-hidden="true">›</span>
+            </Link>
+          )}
+
+          <FabAnotar jogo={jogo} />
         </>
       )}
 
@@ -251,34 +517,6 @@ export function Jornada() {
           </Link>
         </div>
       )}
-
-      {sessao && (
-        <Link className="jornada-notas" to={`/jornada/sessao/${sessao.id}/notas`}>
-          <span className="jornada-notas-icone" aria-hidden="true">
-            <NotebookPen size={19} strokeWidth={1.75} />
-          </span>
-          <span className="jornada-notas-texto">
-            <strong>Notas da sessão atual</strong>
-            <small>
-              Sessão {sessao.numero}
-              {jogoDaSessao ? ` · ${jogoDaSessao.nome}` : ''}
-            </small>
-          </span>
-          <ChevronRight size={18} strokeWidth={1.75} aria-hidden="true" />
-        </Link>
-      )}
-
-      <div className="placeholder-card">
-        <span className="placeholder-label">
-          <span className="placeholder-dot" aria-hidden="true" />
-          Em preparação
-        </span>
-        <p>
-          A trilha, os objetivos e o diário de sessões chegam nas próximas fatias.
-        </p>
-      </div>
-
-      <FabAnotar jogo={jogo} />
     </section>
   )
 }

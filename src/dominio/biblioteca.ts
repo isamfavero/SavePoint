@@ -71,7 +71,7 @@ export function existeJogoDuplicado(
 }
 
 export function formatarHoras(duracaoMs: number): string {
-  const totalMinutos = Math.max(0, Math.floor(duracaoMs / 60_000))
+  const totalMinutos = Math.max(0, Math.floor(duracaoMs / 60000))
   const horas = Math.floor(totalMinutos / 60)
   const minutos = totalMinutos % 60
 
@@ -83,6 +83,45 @@ export function formatarHoras(duracaoMs: number): string {
 
 export function formatarSessoes(total: number): string {
   return `${total} ${total === 1 ? 'sessão' : 'sessões'}`
+}
+
+export function formatarData(data: Date): string {
+  const meses = [
+    'jan',
+    'fev',
+    'mar',
+    'abr',
+    'mai',
+    'jun',
+    'jul',
+    'ago',
+    'set',
+    'out',
+    'nov',
+    'dez',
+  ]
+  const mes = meses[data.getMonth()]
+  return `${data.getDate()} ${mes}`
+}
+
+export function formatarDuracao(
+  inicio: Date,
+  fim: Date | null,
+): string {
+  if (fim) {
+    const totalMinutos = Math.max(
+      0,
+      Math.floor((fim.getTime() - inicio.getTime()) / 60_000),
+    )
+    const horas = Math.floor(totalMinutos / 60)
+    const minutos = totalMinutos % 60
+
+    if (horas === 0) return `${minutos}min`
+    if (minutos === 0) return `${horas}h`
+
+    return `${horas}h${String(minutos).padStart(2, '0')}`
+  }
+  return '—'
 }
 
 export function formatarTempoRelativo(data: Date, agora: Date = new Date()): string {

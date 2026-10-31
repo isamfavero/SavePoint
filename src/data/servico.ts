@@ -1,6 +1,8 @@
 import {
+  calcularDuracaoSessao,
   calcularEstatisticasSessoes,
   calcularTempoTotalAoVivo as calcularTempoTotalAoVivoSessoes,
+  MS_POR_HORA,
 } from './calculos'
 import type { EstatisticasJogo } from './calculos'
 import { ErroSavePoint } from './erros'
@@ -403,19 +405,26 @@ export class ServicoSavePoint {
     if (tipo === 'Objetivo') {
       const concluido = dados.concluido ?? existente.concluido ?? false
       const concluidoEm =
-        dados.concluidoEm !== undefined ? dados.concluidoEm : (existente.concluidoEm ?? null)
+        dados.concluidoEm !== undefined ? dados.concluidoEm : existente.concluidoEm
       const concluidoSessaoId =
         dados.concluidoSessaoId !== undefined
           ? dados.concluidoSessaoId
-          : (existente.concluidoSessaoId ?? null)
+          : existente.concluidoSessaoId
 
       if (concluido && concluidoSessaoId) {
         await this.validarSessaoDoJogo(jogoId, concluidoSessaoId)
       }
 
       registro.concluido = concluido
-      registro.concluidoEm = concluido ? concluidoEm : null
-      registro.concluidoSessaoId = concluido ? concluidoSessaoId : null
+      if (concluido) {
+        registro.concluidoEm = concluidoEm ?? null
+        registro.concluidoSessaoId = concluidoSessaoId ?? null
+      }
+      // When reopening (concluido = false), remove the fields entirely
+      else {
+        delete registro.concluidoEm
+        delete registro.concluidoSessaoId
+      }
     } else {
       delete registro.concluido
       delete registro.concluidoEm
@@ -440,11 +449,70 @@ export class ServicoSavePoint {
       throw new ErroSavePoint('DADOS_INVALIDOS', 'Só objetivos podem ser concluídos.')
     }
 
+    const sessaoAtiva = await this.obterSessaoAtiva()
+
     return this.atualizarRegistro(id, {
       concluido: true,
       concluidoEm: dados.concluidoEm ?? this.agora(),
-      concluidoSessaoId: dados.concluidoSessaoId ?? null,
+      concluidoSessaoId:
+        dados.concluidoSessaoId ?? (sessaoAtiva ? sessaoAtiva.id : null),
     })
+  }
+
+  async reabrirObjetivo(id: string): Promise<Registro> {
+    const existente = await this.repositorio.obterRegistro(id)
+
+    if (!existente) {
+      throw new ErroSavePoint('REGISTRO_NAO_ENCONTRADO', 'Registro não encontrado.')
+    }
+
+    if (existente.tipo !== 'Objetivo') {
+      throw new ErroSavePoint('DADOS_INVALIDOS', 'Só objetivos podem ser reabertos.')
+    }
+
+    const atualizado = await this.atualizarRegistro(id, {
+      concluido: false,
+      concluidoEm: null,
+      concluidoSessaoId: null,
+    })
+
+    // Remove os campos de conclusão para "remover" eles completamente
+    delete atualizado.concluidoEm
+    delete atualizado.concluidoSessaoId
+
+    return atualizado
+  }
+
+  async calcularHorasNaSemana(jogoId: string): Promise<number> {
+    const jogo = await this.repositorio.obterJogo(jogoId)
+
+    if (!jogo) {
+      throw new ErroSavePoint('JOGO_NAO_ENCONTRADO', 'Jogo não encontrado.')
+    }
+
+    const sessaoAtiva = await this.obterSessaoAtiva()
+    const sessoes = await this.repositorio.listarSessoesPorJogo(jogoId)
+
+    const agora = this.agora()
+    const seteDiasAtras = new Date(agora.getTime() - 7 * 24 * 60 * 60 * 1000)
+
+    const encerradasNaSemana = sessoes.filter(
+      (sessao) =>
+        sessao.fim !== null && sessao.inicio.getTime() >= seteDiasAtras.getTime(),
+    )
+
+    const horasEncerradas = encerradasNaSemana.reduce(
+      (total, sessao) => total + calcularDuracaoSessao(sessao, agora),
+      0,
+    )
+
+    let horasEmAndamento = 0
+
+    if (sessaoAtiva && sessaoAtiva.jogoId === jogoId && sessaoAtiva.inicio.getTime() >= seteDiasAtras.getTime()) {
+      horasEmAndamento = calcularDuracaoSessao(sessaoAtiva, agora)
+    }
+
+    return (horasEncerradas + horasEmAndamento) / MS_POR_HORA
   }
 
   async excluirRegistro(id: string): Promise<void> {
@@ -466,6 +534,51 @@ export class ServicoSavePoint {
 
     const sessoes = await this.repositorio.listarSessoesPorJogo(jogoId)
     return calcularEstatisticasSessoes(sessoes, this.agora())
+  }
+
+  async resumirSessao(sessaoId: string): Promise<{
+    totalAnotacoes: number
+    marcos: number
+    regioesMapeadas: number
+    objetivosConcluidos: number
+    tagsUsadas: string[]
+  }> {
+    const registros = await this.listarRegistrosDaSessao(sessaoId)
+
+    const totalAnotacoes = registros.length
+    const marcos = registros.filter((r) => r.tipo === 'Marco').length
+    const regioesMapeadas = registros.filter(
+      (r) => r.tipo === 'Região mapeada',
+    ).length
+
+    const objetivosConcluidos = registros.filter(
+      (r) => r.tipo === 'Objetivo' && r.concluidoSessaoId === sessaoId,
+    ).length
+
+    // Coletar tags usadas (até 3, mais "+N" se houver mais)
+    const todasAsTags = new Set<string>()
+    for (const registro of registros) {
+      for (const tag of registro.tags) {
+        try {
+          const normalizada = normalizarTag(tag)
+          if (normalizada) todasAsTags.add(normalizada)
+        } catch {
+          continue
+        }
+      }
+    }
+
+    const tagsArray = [...todasAsTags]
+    const tagsResumidas = tagsArray.slice(0, 3)
+    const adicional = tagsArray.length > 3 ? `+${tagsArray.length - 3}` : ''
+
+    return {
+      totalAnotacoes,
+      marcos,
+      regioesMapeadas,
+      objetivosConcluidos,
+      tagsUsadas: tagsResumidas.length > 0 ? [...tagsResumidas, adicional].filter((t) => t) : [],
+    }
   }
 
   async calcularTempoTotalAoVivo(jogoId: string): Promise<number> {

@@ -395,6 +395,110 @@ describe.each(implementacoes)('ServicoSavePoint com repositório em %s', (_nome,
     ).rejects.toMatchObject({ codigo: 'DADOS_INVALIDOS' })
   })
 
+  it('conclui e reabre Objetivo, gravando concluidoEm e concluidoSessaoId', async () => {
+    const { jogo, sessao } = await prepararJogoESessao(ctx)
+
+    const objetivo = await ctx.servico.criarRegistro({
+      jogoId: jogo.id,
+      sessaoId: sessao.id,
+      tipo: 'Objetivo',
+      texto: 'Encontrar a chave do observatório.',
+    })
+
+    expect(objetivo.concluido).toBe(false)
+    expect(objetivo.concluidoEm).toBeNull()
+    expect(objetivo.concluidoSessaoId).toBeNull()
+
+    const concluido = await ctx.servico.concluirObjetivo(objetivo.id)
+
+    expect(concluido.concluido).toBe(true)
+    expect(concluido.concluidoEm).not.toBeNull()
+    expect(concluido.concluidoSessaoId).toBe(sessao.id)
+
+    /* @ts-ignore */
+    const salvo = await ctx.servico.obterRegistro(objetivo.id)
+    expect(salvo).not.toBeNull()
+    /* @ts-ignore */
+    expect(salvo.concluido).toBe(true)
+    /* @ts-ignore */
+    expect(salvo.concluidoSessaoId).toBe(sessao.id)
+
+    const reaberto = await ctx.servico.reabrirObjetivo(objetivo.id)
+
+    expect(reaberto.concluido).toBe(false)
+    expect(reaberto.concluidoEm).toBeUndefined()
+    expect(reaberto.concluidoSessaoId).toBeUndefined()
+
+    const salvoReaberto = await ctx.servico.obterRegistro(objetivo.id)
+    expect(salvoReaberto).not.toHaveProperty('concluidoEm')
+    expect(salvoReaberto).not.toHaveProperty('concluidoSessaoId')
+  })
+
+  it('conclui Objetivo sem sessão ativa, gravando só concluidoEm', async () => {
+    const { jogo, sessao } = await prepararJogoESessao(ctx)
+
+    const objetivo = await ctx.servico.criarRegistro({
+      jogoId: jogo.id,
+      sessaoId: sessao.id,
+      tipo: 'Objetivo',
+      texto: 'Encontrar a chave do observatório.',
+    })
+
+    await ctx.servico.encerrarSessao(sessao.id)
+    expect(await ctx.servico.obterSessaoAtiva()).toBeNull()
+
+    const concluido = await ctx.servico.concluirObjetivo(objetivo.id)
+
+    expect(concluido.concluido).toBe(true)
+    expect(concluido.concluidoEm).not.toBeNull()
+    expect(concluido.concluidoSessaoId).toBeNull()
+  })
+
+  it('muda a situação do jogo pelo serviço', async () => {
+    const jogo = await criarJogo(ctx)
+
+    const atualizado = await ctx.servico.atualizarJogo(jogo.id, {
+      situacao: 'Concluído',
+    })
+
+    expect(atualizado.situacao).toBe('Concluído')
+
+    const salvo = await ctx.servico.obterJogo(jogo.id)
+    expect(salvo?.situacao).toBe('Concluído')
+  })
+
+  it('calcula estatísticas com sessões encerradas e em andamento', async () => {
+    const { jogo, sessao } = await prepararJogoESessao(ctx)
+
+    ctx.avancar(90 * MINUTO)
+    await ctx.servico.encerrarSessao(sessao.id)
+
+    await ctx.servico.iniciarSessao(jogo.id)
+    ctx.avancar(30 * MINUTO)
+
+    const estatisticas = await ctx.servico.calcularEstatisticasJogo(jogo.id)
+
+    expect(estatisticas.totalSessoes).toBe(1)
+    expect(estatisticas.sessoesEmAndamento).toBe(1)
+    expect(estatisticas.horasTotais).toBeCloseTo(1.5, 1)
+    expect(estatisticas.mediaHorasPorSessao).toBeCloseTo(1.5, 1)
+  })
+
+  it('calcula horas da semana incluindo sessão em andamento', async () => {
+    const { jogo, sessao } = await prepararJogoESessao(ctx)
+
+    // Encerra a sessão anterior com tempo válido (agora)
+    await ctx.servico.encerrarSessao(sessao.id)
+
+    await ctx.servico.iniciarSessao(jogo.id)
+    ctx.avancar(2 * MINUTO)
+
+    const horas = await ctx.servico.calcularHorasNaSemana(jogo.id)
+
+    expect(horas).toBeCloseTo(0.033, 2)
+    expect(horas).toBeGreaterThan(0)
+  })
+
   it('apaga sessões e registros ao apagar o jogo', async () => {
     const { jogo, sessao } = await prepararJogoESessao(ctx)
 
