@@ -221,29 +221,31 @@ export function Jornada() {
       {!carregando && !erro && jogo && (
         <>
           <div className="jornada-atual">
-            <div className="jogo-miniatura">
-              <JogoCapa capa={jogo.capa} alt={`Capa de ${jogo.nome}`} />
-            </div>
+            <div className="jogo-linha">
+              <div className="jogo-miniatura">
+                <JogoCapa capa={jogo.capa} alt={`Capa de ${jogo.nome}`} />
+              </div>
 
-            <div className="jogo-info">
-              <span className="jogo-rotulo">JOGO ATUAL</span>
-              <h2 className="jogo-titulo">{jogo.nome}</h2>
-              <p className="jogo-info">
-                {jogo.plataforma}
-                <SituacaoSelector jogo={jogo} />
-              </p>
+              <div className="jogo-info">
+                <span className="jogo-rotulo">JOGO ATUAL</span>
+                <h2 className="jogo-titulo">{jogo.nome}</h2>
+                <p className="jogo-info-linha">
+                  {jogo.plataforma}
+                  <SituacaoSelector jogo={jogo} />
+                </p>
 
-              <div className="jornada-resumo">
-                <span className="meta-pill">
-                  <Clock size={13} strokeWidth={1.5} aria-hidden="true" />
-                  {carregandoSessoes ? '—' : `${formatarHoras(tempoTotalMs)} jogadas`}
-                </span>
-                <span className="meta-pill">
-                  <BookOpen size={13} strokeWidth={1.5} aria-hidden="true" />
-                  {carregandoSessoes
-                    ? '—'
-                    : `${formatarSessoes(estatisticas?.totalSessoes ?? 0)} sessões arquivadas`}
-                </span>
+                <div className="jornada-resumo">
+                  <span className="meta-pill">
+                    <Clock size={13} strokeWidth={1.5} aria-hidden="true" />
+                    {carregandoSessoes ? '—' : `${formatarHoras(tempoTotalMs)} jogadas`}
+                  </span>
+                  <span className="meta-pill">
+                    <BookOpen size={13} strokeWidth={1.5} aria-hidden="true" />
+                    {carregandoSessoes
+                      ? '—'
+                      : `${formatarSessoes(estatisticas?.totalSessoes ?? 0)} sessões arquivadas`}
+                  </span>
+                </div>
               </div>
             </div>
           </div>

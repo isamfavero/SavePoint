@@ -1388,9 +1388,9 @@ textarea {
 
 .jogo-miniatura {
   flex: 0 0 auto;
-  width: 56px;
-  height: 56px;
-  border-radius: 10px;
+  width: 64px;
+  height: 64px;
+  border-radius: 14px;
   overflow: hidden;
   background: var(--color-bg-deep);
   display: grid;
@@ -1404,17 +1404,48 @@ textarea {
   display: block;
 }
 
+.jogo-linha {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+
 .jogo-info {
   display: flex;
   flex-direction: column;
   gap: 6px;
 }
 
+.jogo-info-linha {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: 0.7rem;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  line-height: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.jogo-info-linha .situacao-selector {
+  margin-left: 0;
+  flex-shrink: 0;
+}
+
+.jogo-info-linha .situacao-botao {
+  padding: 3px 8px;
+  font-size: 0.62rem;
+}
+
 .jogo-rotulo {
   color: var(--color-accent);
-  font-size: 0.7rem;
+  font-size: 10px;
   font-weight: 700;
-  letter-spacing: 0.16em;
+  letter-spacing: 0.12em;
   line-height: 1;
   text-transform: uppercase;
 }
@@ -1426,6 +1457,12 @@ textarea {
   font-weight: 600;
   letter-spacing: -0.02em;
   line-height: 1.15;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
 }
 
 .jornada-sessao {
