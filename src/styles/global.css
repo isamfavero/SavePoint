@@ -1396,8 +1396,10 @@ textarea {
 
 .jogo-atual-capa {
   flex: 0 0 auto;
-  width: 64px;
-  height: 64px;
+  align-self: stretch;
+  aspect-ratio: 1 / 1;
+  min-width: 48px;
+  max-width: 64px;
   border-radius: 14px;
   overflow: hidden;
   background: #0c0e16;
@@ -1454,24 +1456,12 @@ textarea {
   overflow: hidden;
 }
 
-.jogo-atual-plataforma {
-  color: #9898A3;
-  font-size: 11px;
-  font-weight: 500;
-  letter-spacing: 0.02em;
-  line-height: 1;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  min-width: 0;
-  flex-shrink: 1;
-}
-
 .chip {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 4px 8px;
+  height: 28px;
+  padding: 0 10px;
   border: 1px solid #282A32;
   border-radius: 999px;
   background: #11131B;
@@ -1496,7 +1486,8 @@ textarea {
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  padding: 4px 8px;
+  height: 28px;
+  padding: 0 10px;
   border: 1px solid #282A32;
   border-radius: 999px;
   background: #11131B;
