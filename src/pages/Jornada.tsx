@@ -1,7 +1,6 @@
 import {
   BookOpen,
   ChevronLeft,
-  Clock,
   NotebookPen,
   Pause,
   Play,
@@ -13,9 +12,8 @@ import { CabecalhoMarca } from '../components/CabecalhoMarca'
 import { Cronometro } from '../components/Cronometro'
 import { EstatisticasJogo } from '../components/EstatisticasJogo'
 import { FabAnotar } from '../components/FabAnotar'
-import { JogoCapa } from '../components/JogoCapa'
+import { JogoAtualCard } from '../components/JogoAtualCard'
 import { ObjetivosLista } from '../components/ObjetivosLista'
-import { SituacaoSelector } from '../components/SituacaoSelector'
 import { Tabs } from '../components/Tabs'
 import { TrilhaCronologica } from '../components/TrilhaCronologica'
 import { useSessaoAtiva } from '../contexts/SessaoAtivaContext'
@@ -23,9 +21,7 @@ import { useServicoSavePoint } from '../contexts/ServicoContext'
 import {
   formatarData,
   formatarHoras,
-  formatarSessoes,
 } from '../dominio/biblioteca'
-import { formatarDuracao } from '../dominio/cronometro'
 import { salvarInstanteEncerramento } from '../estado/encerramento'
 import { useJogoAtualDetalhe } from '../hooks/useJogoAtualDetalhe'
 import { useSessoesDoJogo } from '../hooks/useSessoesDoJogo'
@@ -221,31 +217,12 @@ export function Jornada() {
 
       {!carregando && !erro && jogo && (
         <>
-          <div className="jornada-atual">
-            <div className="jogo-linha">
-              <div className="jogo-miniatura">
-                <JogoCapa capa={jogo.capa} alt={`Capa de ${jogo.nome}`} />
-              </div>
-
-              <div className="jogo-info">
-                <span className="jogo-rotulo">JOGO ATUAL</span>
-                <h2 className="jogo-titulo">{jogo.nome}</h2>
-              </div>
-
-              <div className="jogo-detalhes">
-                <span className="jogo-plataforma">{jogo.plataforma}</span>
-                <span className="chip chip-tempo">
-                  <Clock size={14} strokeWidth={1.75} aria-hidden="true" />
-                  {carregandoSessoes ? '—' : formatarDuracao(tempoTotalMs)}
-                </span>
-                <span className="chip chip-sessoes">
-                  <BookOpen size={14} strokeWidth={1.75} aria-hidden="true" />
-                  {carregandoSessoes ? '—' : formatarSessoes(estatisticas?.totalSessoes ?? 0)}
-                </span>
-                <SituacaoSelector jogo={jogo} className="chip chip-situacao" />
-              </div>
-            </div>
-          </div>
+          <JogoAtualCard
+            jogo={jogo}
+            carregandoSessoes={carregandoSessoes}
+            tempoTotalMs={tempoTotalMs}
+            totalSessoes={estatisticas?.totalSessoes ?? 0}
+          />
 
           <div
             className={`jornada-sessao${sessaoDoJogoAtual ? ' jornada-sessao-ativa' : ''}`}

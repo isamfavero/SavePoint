@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import {
   formatarDuracao,
+  formatarQuantidadeSessoes,
+  formatarTempoCurto,
   resolverFimSessao,
   sessaoEstaPausada,
 } from '../cronometro'
@@ -16,6 +18,36 @@ describe('formatarDuracao', () => {
 
   it('não mostra durações negativas', () => {
     expect(formatarDuracao(-5_000)).toBe('00:00:00')
+  })
+})
+
+describe('formatarTempoCurto', () => {
+  it('devolve 0 min para menos de 1 minuto', () => {
+    expect(formatarTempoCurto(0)).toBe('0 min')
+    expect(formatarTempoCurto(30_000)).toBe('0 min')
+    expect(formatarTempoCurto(59_000)).toBe('0 min')
+  })
+
+  it('devolve N min abaixo de 1 hora', () => {
+    expect(formatarTempoCurto(2 * 60_000)).toBe('2 min')
+    expect(formatarTempoCurto(59 * 60_000)).toBe('59 min')
+  })
+
+  it('devolve Xh YZ a partir de 1 hora', () => {
+    expect(formatarTempoCurto(60_000)).toBe('1 min')
+    expect(formatarTempoCurto(3_600_000)).toBe('1h')
+    expect(formatarTempoCurto(5_400_000)).toBe('1h 30')
+    expect(formatarTempoCurto(2 * 3_600_000 + 30 * 60_000)).toBe('2h 30')
+    expect(formatarTempoCurto(12 * 3_600_000 + 30 * 60_000)).toBe('12h 30')
+  })
+})
+
+describe('formatarQuantidadeSessoes', () => {
+  it('usa o singular para uma sessão e o plural para várias', () => {
+    expect(formatarQuantidadeSessoes(0)).toBe('0 sessões')
+    expect(formatarQuantidadeSessoes(1)).toBe('1 sessão')
+    expect(formatarQuantidadeSessoes(2)).toBe('2 sessões')
+    expect(formatarQuantidadeSessoes(10)).toBe('10 sessões')
   })
 })
 
