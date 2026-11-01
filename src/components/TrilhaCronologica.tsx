@@ -1,7 +1,6 @@
-import { ChevronRight, MoreHorizontal } from 'lucide-react'
+import { ChevronRight, Crosshair, Milestone, Route } from 'lucide-react'
 import { useState } from 'react'
-import { formatarDuracao } from '../dominio/cronometro'
-import { formatarTempoRelativo } from '../dominio/biblioteca'
+import { formatarDuracao, formatarTempoCurto } from '../dominio/cronometro'
 import type { Registro, Sessao } from '../data'
 
 type RegistroTrilha = Registro & {
@@ -14,6 +13,91 @@ type TrilhaCronologicaProps = {
   registrosPorSessao: Record<string, Registro[]>
   sessaoAtiva: Sessao | null
   horasTotais: number
+}
+
+type PontoRotulo = {
+  posicao: number
+  horas: number
+  texto: string
+  ehUltimo: boolean
+}
+
+function formatarHorasCurto(horas: number): string {
+  const minutosTotais = Math.max(0, Math.round(horas * 60))
+  const h = Math.floor(minutosTotais / 60)
+  const m = minutosTotais % 60
+
+  if (h === 0 && m === 0) return '0h'
+  if (m === 0) return `${h}h`
+  return `${h}h${m}`
+}
+
+export function calcularRotulosTrilha(
+  sessoes: Sessao[],
+  horasTotais: number,
+): PontoRotulo[] {
+  const encerradas = sessoes.filter((s) => s.fim !== null)
+
+  if (encerradas.length === 0) return []
+
+  const ordenadas = [...encerradas].sort(
+    (a, b) => a.inicio.getTime() - b.inicio.getTime(),
+  )
+
+  const pontos: PontoRotulo[] = [
+    { posicao: 0, horas: 0, texto: '0h', ehUltimo: false },
+  ]
+
+  let acumuladoHoras = 0
+  const barraLargura = horasTotais > 0 ? horasTotais : 1
+
+  for (const sessao of ordenadas) {
+    acumuladoHoras += calcularDuracaoSessao(sessao) / 3_600_000
+
+    pontos.push({
+      posicao: Math.min((acumuladoHoras / barraLargura) * 100, 100),
+      horas: acumuladoHoras,
+      texto: formatarHorasCurto(acumuladoHoras),
+      ehUltimo: false,
+    })
+  }
+
+  if (pontos.length > 1) {
+    const ultimo = pontos[pontos.length - 1]
+    ultimo.ehUltimo = true
+    ultimo.texto = formatarHorasCurto(horasTotais)
+    ultimo.horas = horasTotais
+  }
+
+  const resultado: PontoRotulo[] = []
+  let ultimaPosicao: number | null = null
+
+  for (const ponto of pontos) {
+    if (resultado.length > 0 && resultado[resultado.length - 1].texto === ponto.texto) {
+      continue
+    }
+
+    if (ultimaPosicao !== null && ponto.posicao - ultimaPosicao < 10) {
+      continue
+    }
+
+    resultado.push(ponto)
+    ultimaPosicao = ponto.posicao
+  }
+
+  return resultado
+}
+
+function calcularDuracaoSessao(sessao: Sessao): number {
+  const referencia = sessao.fim ?? new Date()
+  const pausaEmAndamento = sessao.pausadoEm
+    ? Math.max(0, referencia.getTime() - sessao.pausadoEm.getTime())
+    : 0
+
+  return Math.max(
+    0,
+    referencia.getTime() - sessao.inicio.getTime() - sessao.tempoPausado - pausaEmAndamento,
+  )
 }
 
 function formatarData(data: Date): string {
@@ -61,46 +145,8 @@ export function TrilhaCronologica({
       : tipoOndeParei === 'sessao'
         ? ultimaEncerrada?.oQueFiz
         : null
-  const dataOndeParei =
-    tipoOndeParei === 'marco' ? ultimoMarco?.dataHora : ultimaEncerrada?.inicio
 
-  const barraLargura = horasTotais > 0 ? horasTotais : 1
-
-  function posicaoAcumulada(sessao: Sessao): number {
-    const anterioresSessao = encerradas
-      .filter((s) => s.inicio.getTime() <= sessao.inicio.getTime())
-      .sort((a, b) => a.inicio.getTime() - b.inicio.getTime())
-
-    return (
-      anterioresSessao.reduce((total, s) => total + calcularDuracaoSessao(s), 0) /
-      barraLargura
-    ) * 100
-  }
-
-  function calcularDuracaoSessao(sessao: Sessao): number {
-    const referencia = sessao.fim ?? new Date()
-    const pausaEmAndamento = sessao.pausadoEm
-      ? Math.max(0, referencia.getTime() - sessao.pausadoEm.getTime())
-      : 0
-
-    return Math.max(
-      0,
-      referencia.getTime() - sessao.inicio.getTime() - sessao.tempoPausado - pausaEmAndamento,
-    )
-  }
-
-  function horasAcumuladasAte(sessao: Sessao): number {
-    const anterioresSessao = encerradas
-      .filter((s) => s.inicio.getTime() <= sessao.inicio.getTime())
-      .sort((a, b) => a.inicio.getTime() - b.inicio.getTime())
-
-    return (
-      anterioresSessao.reduce(
-        (total, s) => total + calcularDuracaoSessao(s),
-        0,
-      ) / 3_600_000
-    )
-  }
+  const rotulos = calcularRotulosTrilha(encerradas, horasTotais)
 
   function alternarExpansao(sessaoId: string) {
     setExpansoes((atuais) => {
@@ -116,69 +162,62 @@ export function TrilhaCronologica({
     })
   }
 
+  if (encerradas.length === 0 && !sessaoAtiva) {
+    return (
+      <section className="trilha" aria-label="Trilha cronológica">
+        <div className="trilha-vazia">
+          Suas sessões vão aparecer aqui, na trilha do jogo.
+        </div>
+      </section>
+    )
+  }
+
   return (
     <section className="trilha" aria-label="Trilha cronológica">
-      <div className="trilha-barra-container">
-        <div className="trilha-barra" role="progressbar" aria-valuenow={100} aria-valuemin={0} aria-valuemax={100}>
-          <div className="trilha-linha" />
-          {encerradas.map((sessao) => {
-            const posicao = posicaoAcumulada(sessao)
-
-            return (
-              <div
-                key={sessao.id}
-                className="trilha-ponto"
-                style={{ left: `${posicao}%` }}
-                aria-label={`Fim da sessão ${sessao.numero}`}
-              />
-            )
-          })}
-
-          {sessaoAtiva && (
-            <div
-              className="trilha-ponto trilha-ponto-ativa"
-              style={{ left: `${Math.min(posicaoAcumulada(sessaoAtiva), 100)}%` }}
-              aria-label={`Sessão ${sessaoAtiva.numero} em andamento`}
-            />
-          )}
-        </div>
-
-        <div className="trilha-eixos">
-          <span className="trilha-eixo">0h</span>
-          {encerradas.length > 0 && (
-            <>
-              {encerradas
-                .slice()
-                .sort((a, b) => a.inicio.getTime() - b.inicio.getTime())
-                .map((sessao) => {
-                  const posicao = posicaoAcumulada(sessao)
-                  const acumulado = horasAcumuladasAte(sessao)
-
-                  return (
-                    <span
-                      key={sessao.id}
-                      className="trilha-eixo"
-                      style={{ left: `${Math.min(posicao, 100)}%` }}
-                    >
-                      {acumulado.toFixed(0)}h
-                    </span>
-                  )
-                })}
-            </>
-          )}
-          <span className="trilha-eixo trilha-eixo-final">{horasTotais.toFixed(0)}h</span>
-        </div>
+      <div className="trilha-titulo">
+        <Route size={18} strokeWidth={1.75} className="trilha-titulo-icone" aria-hidden="true" />
+        <h2 className="trilha-titulo-texto">Trilha Cronológica</h2>
       </div>
 
-      <div className="trilha-voce-esta-aqui">
-        <span className="trilha-rotulo">Você está aqui</span>
-        <span className="trilha-valor">{horasTotais.toFixed(0)}h</span>
-        {tipoOndeParei && textoOndeParei && dataOndeParei && (
-          <span className="trilha-ondem-parei">
-            {tipoOndeParei === 'marco' ? 'Último Marco:' : 'Onde parei:'}
-            {textoCurto(textoOndeParei)} · {formatarTempoRelativo(dataOndeParei)}
-          </span>
-        )}
+      <div className="trilha-card">
+        <div className="trilha-barra-container">
+          <div className="trilha-barra" role="progressbar" aria-valuenow={100} aria-valuemin={0} aria-valuemax={100}>
+            <div className="trilha-linha" />
+            {rotulos.map((rotulo) => (
+              <div
+                key={rotulo.texto}
+                className={`trilha-ponto${rotulo.ehUltimo ? ' trilha-ponto-ultimo' : ''}`}
+                style={{ left: `${rotulo.posicao}%` }}
+                aria-label={`Fim da sessão em ${rotulo.texto}`}
+              />
+            ))}
+          </div>
+
+          <div className="trilha-eixos">
+            {rotulos.map((rotulo) => (
+              <span
+                key={rotulo.texto}
+                className={`trilha-eixo${rotulo.ehUltimo ? ' trilha-eixo-ultimo' : ''}`}
+                style={{ left: `${rotulo.posicao}%` }}
+              >
+                {rotulo.texto}
+              </span>
+            ))}
+          </div>
+        </div>
+
+        <div className="trilha-voce-esta-aqui">
+          <span className="trilha-ponto-aqui" aria-hidden="true" />
+          <div className="trilha-voce-textos">
+            <span className="trilha-rotulo-aqui">VOCÊ ESTÁ AQUI · {formatarTempoCurto(horasTotais)}</span>
+            <p className="trilha-ondem-parei">
+              {tipoOndeParei && textoOndeParei
+                ? textoCurto(textoOndeParei)
+                : 'Registre onde parou ao encerrar uma sessão.'}
+            </p>
+          </div>
+          <Crosshair size={16} strokeWidth={1.75} className="trilha-crosshair" aria-hidden="true" />
+        </div>
       </div>
 
       {sessaoAtiva && (
@@ -187,7 +226,9 @@ export function TrilhaCronologica({
             Sessão {sessaoAtiva.numero} em andamento
           </span>
           <span className="trilha-sessao-ativa-tempo">
-            {formatarDuracao(calcularDuracaoSessao(sessaoAtiva))}
+            {formatarDuracao(
+              calcularDuracaoSessao(sessaoAtiva),
+            )}
           </span>
         </div>
       )}
@@ -198,7 +239,13 @@ export function TrilhaCronologica({
             key={sessao.id}
             sessao={sessao}
             registros={registrosPorSessao[sessao.id] ?? []}
-            horasAcumuladas={horasAcumuladasAte(sessao)}
+            horasAcumuladas={
+              encerradas
+                .filter((s) => s.inicio.getTime() <= sessao.inicio.getTime())
+                .sort((a, b) => a.inicio.getTime() - b.inicio.getTime())
+                .reduce((total, s) => total + calcularDuracaoSessao(s), 0) /
+              3_600_000
+            }
             expandido={expansoes.has(sessao.id)}
             aoAlternar={() => alternarExpansao(sessao.id)}
           />
@@ -223,7 +270,13 @@ export function TrilhaCronologica({
                   key={sessao.id}
                   sessao={sessao}
                   registros={registrosPorSessao[sessao.id] ?? []}
-                  horasAcumuladas={horasAcumuladasAte(sessao)}
+                  horasAcumuladas={
+                    encerradas
+                      .filter((s) => s.inicio.getTime() <= sessao.inicio.getTime())
+                      .sort((a, b) => a.inicio.getTime() - b.inicio.getTime())
+                      .reduce((total, s) => total + calcularDuracaoSessao(s), 0) /
+                      3_600_000
+                  }
                   expandido={expansoes.has(sessao.id)}
                   aoAlternar={() => alternarExpansao(sessao.id)}
                 />
@@ -269,7 +322,7 @@ function SessaoTrilha({
           <span>·</span>
           <span>+{horasAcumuladas.toFixed(0)}h acumuladas</span>
         </div>
-        <MoreHorizontal size={16} strokeWidth={1.75} aria-hidden="true" />
+        <Milestone size={16} strokeWidth={1.75} aria-hidden="true" />
       </div>
 
       {expandido && (
@@ -291,17 +344,5 @@ function SessaoTrilha({
         </ul>
       )}
     </article>
-  )
-}
-
-function calcularDuracaoSessao(sessao: Pick<Sessao, 'inicio' | 'fim' | 'tempoPausado' | 'pausadoEm'>): number {
-  const referencia = sessao.fim ?? new Date()
-  const pausaEmAndamento = sessao.pausadoEm
-    ? Math.max(0, referencia.getTime() - sessao.pausadoEm.getTime())
-    : 0
-
-  return Math.max(
-    0,
-    referencia.getTime() - sessao.inicio.getTime() - sessao.tempoPausado - pausaEmAndamento,
   )
 }
