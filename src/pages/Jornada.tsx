@@ -2,9 +2,7 @@ import {
   BookOpen,
   ChevronLeft,
   NotebookPen,
-  Pause,
   Play,
-  Square,
 } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
@@ -224,49 +222,17 @@ export function Jornada() {
             totalSessoes={estatisticas?.totalSessoes ?? 0}
           />
 
-          <div
-            className={`jornada-sessao${sessaoDoJogoAtual ? ' jornada-sessao-ativa' : ''}`}
-          >
+          <div className="jornada-sessao">
             {sessaoDoJogoAtual ? (
-              <>
-                <Cronometro
-                  numero={sessaoDoJogoAtual.numero}
-                  duracaoMs={duracaoMs}
-                  pausada={pausada}
-                />
-
-                <div className="jornada-acoes">
-                  <button
-                    type="button"
-                    className="botao-secundario"
-                    onClick={aoAlternarPausa}
-                    disabled={acaoEmAndamento !== null}
-                  >
-                    {pausada ? (
-                      <Play size={16} strokeWidth={2} aria-hidden="true" />
-                    ) : (
-                      <Pause size={16} strokeWidth={2} aria-hidden="true" />
-                    )}
-                    {acaoEmAndamento === 'pausar'
-                      ? 'Pausando...'
-                      : acaoEmAndamento === 'retomar'
-                        ? 'Retomando...'
-                        : pausada
-                          ? 'Retomar'
-                          : 'Pausar'}
-                  </button>
-
-                  <button
-                    type="button"
-                    className="botao-primario"
-                    onClick={aoEncerrarSessao}
-                    disabled={acaoEmAndamento !== null}
-                  >
-                    <Square size={15} strokeWidth={2} aria-hidden="true" />
-                    Encerrar
-                  </button>
-                </div>
-              </>
+              <Cronometro
+                numero={sessaoDoJogoAtual.numero}
+                duracaoMs={duracaoMs}
+                pausada={pausada}
+                aoPausarOuRetomar={aoAlternarPausa}
+                aoEncerrar={aoEncerrarSessao}
+                acaoEmAndamento={acaoEmAndamento}
+                estaPausada={pausada}
+              />
             ) : sessaoEmOutroJogo ? (
               <>
                 <p className="jornada-bloqueio">
@@ -283,18 +249,16 @@ export function Jornada() {
               </>
             ) : (
               <>
+                <Cronometro
+                  numero={0}
+                  duracaoMs={0}
+                  semSessao
+                  aoIniciar={aoIniciarSessao}
+                  acaoEmAndamento={acaoEmAndamento}
+                />
                 <p className="jornada-convite">
                   Pronto para jogar? Inicie uma sessão para acompanhar o tempo.
                 </p>
-                <button
-                  type="button"
-                  className="botao-primario"
-                  onClick={aoIniciarSessao}
-                  disabled={acaoEmAndamento !== null}
-                >
-                  <Play size={16} strokeWidth={2} aria-hidden="true" />
-                  {acaoEmAndamento === 'iniciar' ? 'Iniciando...' : 'Iniciar sessão'}
-                </button>
               </>
             )}
 
