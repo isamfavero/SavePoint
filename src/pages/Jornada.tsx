@@ -214,7 +214,7 @@ export function Jornada() {
       )}
 
       {!carregando && !erro && jogo && (
-        <>
+        <div className="cartoes-jornada">
           <JogoAtualCard
             jogo={jogo}
             carregandoSessoes={carregandoSessoes}
@@ -265,6 +265,7 @@ export function Jornada() {
           {erroAcao && (
             <p className="campo-erro" role="alert">{erroAcao}</p>
           )}
+        </div>
 
           <Tabs
             tabs={ABAS_JORNADA}

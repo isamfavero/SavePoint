@@ -1629,6 +1629,12 @@ textarea {
   width: 100%;
 }
 
+.cartoes-jornada {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
 .cronometro-acoes > button {
   flex: 1;
   height: 48px;
