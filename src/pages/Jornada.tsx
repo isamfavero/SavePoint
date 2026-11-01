@@ -265,7 +265,6 @@ export function Jornada() {
           {erroAcao && (
             <p className="campo-erro" role="alert">{erroAcao}</p>
           )}
-        </div>
 
           <Tabs
             tabs={ABAS_JORNADA}
@@ -450,7 +449,7 @@ export function Jornada() {
           )}
 
           <FabAnotar jogo={jogo} />
-        </>
+        </div>
       )}
 
       {!carregando && !erro && !jogo && (
