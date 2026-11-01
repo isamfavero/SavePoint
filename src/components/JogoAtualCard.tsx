@@ -74,22 +74,16 @@ export function JogoAtualCard({
             : formatarQuantidadeSessoes(totalSessoes)}
         </span>
 
-        <div className="chip chip-situacao situacao-selector">
+        <div className="situacao-selector">
           <button
             ref={botaoRef}
             type="button"
-            className="situacao-botao"
+            className="chip situacao-botao"
             onClick={() => setAberto(!aberto)}
             aria-expanded={aberto}
             aria-label={`Situação atual: ${jogo.situacao}. Abrir seletor.`}
           >
-            <span
-              className={`situacao-chip ${jogo.situacao
-                .toLowerCase()
-                .replace(/ /g, '-')}`}
-            >
-              {jogo.situacao}
-            </span>
+            {jogo.situacao}
             <ChevronDown size={12} strokeWidth={1.75} aria-hidden="true" />
           </button>
 

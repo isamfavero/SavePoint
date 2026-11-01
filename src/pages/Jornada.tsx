@@ -222,54 +222,49 @@ export function Jornada() {
             totalSessoes={estatisticas?.totalSessoes ?? 0}
           />
 
-          <div className="jornada-sessao">
-            {sessaoDoJogoAtual ? (
+          {sessaoDoJogoAtual ? (
+            <Cronometro
+              numero={sessaoDoJogoAtual.numero}
+              duracaoMs={duracaoMs}
+              pausada={pausada}
+              aoPausarOuRetomar={aoAlternarPausa}
+              aoEncerrar={aoEncerrarSessao}
+              acaoEmAndamento={acaoEmAndamento}
+              estaPausada={pausada}
+            />
+          ) : sessaoEmOutroJogo ? (
+            <>
+              <p className="jornada-bloqueio">
+                Há uma sessão em andamento em {jogoDaSessao?.nome ?? 'outro jogo'}
+              </p>
+              <button
+                type="button"
+                className="botao-primario sessao-bloqueada"
+                disabled
+              >
+                <Play size={16} strokeWidth={2} aria-hidden="true" />
+                Iniciar sessão
+              </button>
+            </>
+          ) : (
+            <>
               <Cronometro
-                numero={sessaoDoJogoAtual.numero}
-                duracaoMs={duracaoMs}
-                pausada={pausada}
-                aoPausarOuRetomar={aoAlternarPausa}
-                aoEncerrar={aoEncerrarSessao}
+                numero={0}
+                duracaoMs={0}
+                semSessao
+                aoIniciar={aoIniciarSessao}
                 acaoEmAndamento={acaoEmAndamento}
-                estaPausada={pausada}
               />
-            ) : sessaoEmOutroJogo ? (
-              <>
-                <p className="jornada-bloqueio">
-                  Há uma sessão em andamento em {jogoDaSessao?.nome ?? 'outro jogo'}
-                </p>
-                <button
-                  type="button"
-                  className="botao-primario sessao-bloqueada"
-                  disabled
-                >
-                  <Play size={16} strokeWidth={2} aria-hidden="true" />
-                  Iniciar sessão
-                </button>
-              </>
-            ) : (
-              <>
-                <Cronometro
-                  numero={0}
-                  duracaoMs={0}
-                  semSessao
-                  aoIniciar={aoIniciarSessao}
-                  acaoEmAndamento={acaoEmAndamento}
-                />
-                <p className="jornada-convite">
-                  Pronto para jogar? Inicie uma sessão para acompanhar o tempo.
-                </p>
-              </>
-            )}
+            </>
+          )}
 
-            {erroSessoes && (
-              <p className="campo-erro" role="alert">{erroSessoes}</p>
-            )}
+          {erroSessoes && (
+            <p className="campo-erro" role="alert">{erroSessoes}</p>
+          )}
 
-            {erroAcao && (
-              <p className="campo-erro" role="alert">{erroAcao}</p>
-            )}
-          </div>
+          {erroAcao && (
+            <p className="campo-erro" role="alert">{erroAcao}</p>
+          )}
 
           <Tabs
             tabs={ABAS_JORNADA}

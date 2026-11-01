@@ -6,10 +6,9 @@ import type { Jogo } from '../data'
 
 type SituacaoSelectorProps = {
   jogo: Jogo | null
-  className?: string
 }
 
-export function SituacaoSelector({ jogo, className }: SituacaoSelectorProps) {
+export function SituacaoSelector({ jogo }: SituacaoSelectorProps) {
   const servico = useServicoSavePoint()
   const [aberto, setAberto] = useState(false)
   const [salvando, setSalvando] = useState(false)
@@ -33,20 +32,16 @@ export function SituacaoSelector({ jogo, className }: SituacaoSelectorProps) {
   if (!jogo) return null
 
   return (
-    <div className={['situacao-selector', className].filter(Boolean).join(' ')}>
+    <div className="situacao-selector">
       <button
         type="button"
-        className="situacao-botao"
+        className="chip situacao-botao"
         onClick={() => setAberto(!aberto)}
         aria-expanded={aberto}
         aria-label={`Situação atual: ${jogo.situacao}. Abrir seletor.`}
       >
-        <span
-          className={`situacao-chip ${jogo.situacao.toLowerCase().replace(/ /g, '-')}`}
-        >
-          {jogo.situacao}
-        </span>
-        <ChevronDown size={13} strokeWidth={1.75} aria-hidden="true" />
+        {jogo.situacao}
+        <ChevronDown size={12} strokeWidth={1.75} aria-hidden="true" />
       </button>
 
       {aberto && (

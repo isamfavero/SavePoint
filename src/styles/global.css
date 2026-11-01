@@ -1477,15 +1477,16 @@ textarea {
   flex: 0 0 auto;
 }
 
-.chip.situacao-selector {
+.situacao-selector {
   position: relative;
   margin-left: auto;
+  display: inline-flex;
 }
 
 .situacao-botao {
   display: inline-flex;
   align-items: center;
-  gap: 5px;
+  gap: 6px;
   height: 28px;
   padding: 0 10px;
   border: 1px solid #282A32;
@@ -2407,42 +2408,6 @@ textarea {
   color: var(--color-accent);
   background: rgba(242, 184, 75, 0.08);
   box-shadow: inset 0 0 0 1px var(--color-accent);
-}
-
-/* ---------- Situação ---------- */
-
-.situacao-selector {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  margin-left: 10px;
-}
-
-.situacao-botao {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 5px 10px;
-  border: 1px solid var(--color-border);
-  border-radius: 999px;
-  background: rgba(12, 14, 22, 0.6);
-  color: var(--color-text);
-  font-size: 0.72rem;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  line-height: 1;
-  text-transform: uppercase;
-  cursor: pointer;
-}
-
-.situacao-botao:hover {
-  border-color: var(--color-text-muted);
-}
-
-.situacao-chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
 }
 
 .situacao-menu {
