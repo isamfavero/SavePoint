@@ -77,7 +77,7 @@ textarea {
 .app-main {
   flex: 1;
   min-height: 0;
-  padding: 40px 20px 40px;
+  padding: 40px 20px 92px;
   overflow-y: auto;
   overscroll-behavior-y: contain;
   -webkit-overflow-scrolling: touch;
@@ -886,9 +886,9 @@ textarea {
 }
 
 .fab {
-  position: fixed;
-  right: max(20px, calc(50% - var(--app-width) / 2 + 20px));
-  bottom: calc(92px + env(safe-area-inset-bottom));
+  position: absolute;
+  right: 16px;
+  bottom: 16px;
   z-index: 11;
   display: grid;
   place-items: center;
@@ -898,7 +898,7 @@ textarea {
   border-radius: 50%;
   background: var(--color-accent);
   color: var(--color-bg-deep);
-  box-shadow: 0 12px 30px rgba(242, 184, 75, 0.35);
+  box-shadow: 0 12px 30px rgba(242, 184, 75, 0.4);
   cursor: pointer;
 }
 
@@ -1797,10 +1797,6 @@ textarea {
 }
 
 @media (min-width: 431px) {
-  .fab {
-    bottom: 116px;
-  }
-
   .form-acoes {
     border-radius: 0 0 23px 23px;
   }
@@ -3053,14 +3049,6 @@ textarea {
 
 .filtro[aria-pressed='true'] .filtro-contagem {
   color: var(--color-bg-deep);
-}
-
-/* ---------- Botão + da biblioteca ---------- */
-
-.fab {
-  width: 56px;
-  height: 56px;
-  box-shadow: 0 12px 30px rgba(242, 184, 75, 0.4);
 }
 
 /* ---------- Barra inferior ---------- */

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   formatarDuracao,
+  formatarHorasCurto,
   formatarQuantidadeSessoes,
   formatarTempoCurto,
   resolverFimSessao,
@@ -39,6 +40,22 @@ describe('formatarTempoCurto', () => {
     expect(formatarTempoCurto(5_400_000)).toBe('1h 30')
     expect(formatarTempoCurto(2 * 3_600_000 + 30 * 60_000)).toBe('2h 30')
     expect(formatarTempoCurto(12 * 3_600_000 + 30 * 60_000)).toBe('12h 30')
+  })
+})
+
+describe('formatarHorasCurto', () => {
+  it('trunca para minutos inteiros e formata sem espaço', () => {
+    expect(formatarHorasCurto(0)).toBe('0h')
+    expect(formatarHorasCurto(0.5)).toBe('0h30')
+    expect(formatarHorasCurto(1)).toBe('1h')
+    expect(formatarHorasCurto(1.5)).toBe('1h30')
+    expect(formatarHorasCurto(12.5)).toBe('12h30')
+    expect(formatarHorasCurto(13.4833)).toBe('13h28')
+  })
+
+  it('omite minutos quando são zero', () => {
+    expect(formatarHorasCurto(3)).toBe('3h')
+    expect(formatarHorasCurto(0)).toBe('0h')
   })
 })
 

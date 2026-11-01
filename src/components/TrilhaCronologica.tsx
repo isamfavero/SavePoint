@@ -1,6 +1,6 @@
-import { ChevronRight, Crosshair, Milestone, Route } from 'lucide-react'
+import { ChevronRight, Milestone, Route } from 'lucide-react'
 import { useState } from 'react'
-import { formatarDuracao, formatarTempoCurto } from '../dominio/cronometro'
+import { formatarDuracao, formatarHorasCurto } from '../dominio/cronometro'
 import type { Registro, Sessao } from '../data'
 
 type RegistroTrilha = Registro & {
@@ -20,16 +20,6 @@ type PontoRotulo = {
   horas: number
   texto: string
   ehUltimo: boolean
-}
-
-function formatarHorasCurto(horas: number): string {
-  const minutosTotais = Math.max(0, Math.round(horas * 60))
-  const h = Math.floor(minutosTotais / 60)
-  const m = minutosTotais % 60
-
-  if (h === 0 && m === 0) return '0h'
-  if (m === 0) return `${h}h`
-  return `${h}h${m}`
 }
 
 export function calcularRotulosTrilha(
@@ -209,14 +199,13 @@ export function TrilhaCronologica({
         <div className="trilha-voce-esta-aqui">
           <span className="trilha-ponto-aqui" aria-hidden="true" />
           <div className="trilha-voce-textos">
-            <span className="trilha-rotulo-aqui">VOCÊ ESTÁ AQUI · {formatarTempoCurto(horasTotais)}</span>
+            <span className="trilha-rotulo-aqui">VOCÊ ESTÁ AQUI · {formatarHorasCurto(horasTotais)}</span>
             <p className="trilha-ondem-parei">
               {tipoOndeParei && textoOndeParei
                 ? textoCurto(textoOndeParei)
                 : 'Registre onde parou ao encerrar uma sessão.'}
             </p>
           </div>
-          <Crosshair size={16} strokeWidth={1.75} className="trilha-crosshair" aria-hidden="true" />
         </div>
       </div>
 
