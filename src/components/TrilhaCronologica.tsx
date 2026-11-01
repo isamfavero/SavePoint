@@ -1,4 +1,4 @@
-import { ChevronRight, Milestone, Route } from 'lucide-react'
+import { ChevronRight, Route } from 'lucide-react'
 import { useState } from 'react'
 import { formatarDuracao, formatarHorasCurto } from '../dominio/cronometro'
 import type { Registro, Sessao } from '../data'
@@ -63,7 +63,10 @@ export function calcularRotulosTrilha(
   let ultimaPosicao: number | null = null
 
   for (const ponto of pontos) {
-    if (resultado.length > 0 && resultado[resultado.length - 1].texto === ponto.texto) {
+    if (
+      resultado.length > 0 &&
+      resultado[resultado.length - 1].texto === ponto.texto
+    ) {
       continue
     }
 
@@ -90,11 +93,10 @@ function calcularDuracaoSessao(sessao: Sessao): number {
   )
 }
 
-function formatarData(data: Date): string {
+function formatarDataCurta(data: Date): string {
   return new Intl.DateTimeFormat('pt-BR', {
     day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
+    month: 'short',
   }).format(data)
 }
 
@@ -104,6 +106,21 @@ function textoCurto(texto: string): string {
   if (linhas.length <= 2) return texto
 
   return `${linhas[0]} ${linhas[1]}...`
+}
+
+export function trilhasOrdenadas(
+  sessaoAtiva: Sessao | null,
+  encerradas: Sessao[],
+): Sessao[] {
+  const ordenadas = [...encerradas].sort(
+    (a, b) => b.inicio.getTime() - a.inicio.getTime(),
+  )
+
+  if (sessaoAtiva) {
+    return [sessaoAtiva, ...ordenadas]
+  }
+
+  return ordenadas
 }
 
 export function TrilhaCronologica({
@@ -116,11 +133,9 @@ export function TrilhaCronologica({
   const [expansoes, setExpansoes] = useState<Set<string>>(new Set())
 
   const encerradas = sessoes.filter((s) => s.fim !== null)
+  const todasOrdenadas = trilhasOrdenadas(sessaoAtiva, encerradas)
 
-  const ultimasDuas = encerradas.slice().reverse().slice(0, 2)
-  const anteriores = encerradas.slice().reverse().slice(2)
-
-  const ultimaEncerrada = ultimasDuas[0]
+  const ultimaEncerrada = encerradas.length > 0 ? encerradas[0] : null
 
   const ultimoMarco =
     registrosPorSessao[ultimaEncerrada?.id ?? '']?.filter(
@@ -161,6 +176,9 @@ export function TrilhaCronologica({
       </section>
     )
   }
+
+  const sessoesVisuais = todasOrdenadas.slice(0, 2)
+  const sessoesRecolhidas = todasOrdenadas.slice(2)
 
   return (
     <section className="trilha" aria-label="Trilha cronológica">
@@ -210,37 +228,47 @@ export function TrilhaCronologica({
       </div>
 
       {sessaoAtiva && (
-        <div className="trilha-sessao-ativa">
-          <span className="trilha-sessao-ativa-rotulo">
-            Sessão {sessaoAtiva.numero} em andamento
-          </span>
-          <span className="trilha-sessao-ativa-tempo">
-            {formatarDuracao(
-              calcularDuracaoSessao(sessaoAtiva),
-            )}
-          </span>
+        <div className="trilha-sessao-atual">
+          <div className="trilha-ponto-atual" aria-hidden="true" />
+          <div className="trilha-sessao-info">
+            <span className="trilha-sessao-titulo">Sessão {sessaoAtiva.numero} · em andamento</span>
+            <span className="trilha-sessao-tempo">
+              {formatarDuracao(calcularDuracaoSessao(sessaoAtiva))}
+            </span>
+          </div>
         </div>
       )}
 
-      <div className="trilha-sessoes">
-        {ultimasDuas.map((sessao) => (
-          <SessaoTrilha
-            key={sessao.id}
-            sessao={sessao}
-            registros={registrosPorSessao[sessao.id] ?? []}
-            horasAcumuladas={
-              encerradas
-                .filter((s) => s.inicio.getTime() <= sessao.inicio.getTime())
-                .sort((a, b) => a.inicio.getTime() - b.inicio.getTime())
-                .reduce((total, s) => total + calcularDuracaoSessao(s), 0) /
-              3_600_000
-            }
-            expandido={expansoes.has(sessao.id)}
-            aoAlternar={() => alternarExpansao(sessao.id)}
-          />
-        ))}
+      <div className="trilha-linha-vertical" aria-hidden="true" />
 
-        {anteriores.length > 0 && (
+      <div className="trilha-sessoes">
+        {sessoesVisuais.map((sessao) => {
+          const acumuladoHoras =
+            encerradas
+              .filter((s) => s.inicio.getTime() <= sessao.inicio.getTime())
+              .sort((a, b) => a.inicio.getTime() - b.inicio.getTime())
+              .reduce((total, s) => total + calcularDuracaoSessao(s), 0) /
+              3_600_000
+
+          const registros = registrosPorSessao[sessao.id] ?? []
+          const registrosTrilha = registros.filter(
+            (r) => r.tipo === 'Marco' || r.tipo === 'Região mapeada' || r.tipo === 'Diário',
+          )
+
+          return (
+            <SessaoTrilha
+              key={sessao.id}
+              sessao={sessao}
+              registros={registrosTrilha}
+              horasAcumuladas={acumuladoHoras}
+              expandido={expansoes.has(sessao.id)}
+              aoAlternar={() => alternarExpansao(sessao.id)}
+              estaAtiva={sessao.id === sessaoAtiva?.id}
+            />
+          )
+        })}
+
+        {sessoesRecolhidas.length > 0 && (
           <div className="trilha-grupo-anteriores">
             <button
               type="button"
@@ -249,27 +277,39 @@ export function TrilhaCronologica({
             >
               {expandirAnteriores ? 'Ocultar' : 'Expandir'}
               {' '}
-              Sessões anteriores ({anteriores.length})
+              Sessões anteriores ({sessoesRecolhidas.length})
               <ChevronRight size={14} strokeWidth={1.75} aria-hidden="true" />
             </button>
 
             {expandirAnteriores &&
-              anteriores.map((sessao) => (
-                <SessaoTrilha
-                  key={sessao.id}
-                  sessao={sessao}
-                  registros={registrosPorSessao[sessao.id] ?? []}
-                  horasAcumuladas={
-                    encerradas
-                      .filter((s) => s.inicio.getTime() <= sessao.inicio.getTime())
-                      .sort((a, b) => a.inicio.getTime() - b.inicio.getTime())
-                      .reduce((total, s) => total + calcularDuracaoSessao(s), 0) /
-                      3_600_000
-                  }
-                  expandido={expansoes.has(sessao.id)}
-                  aoAlternar={() => alternarExpansao(sessao.id)}
-                />
-              ))}
+              sessoesRecolhidas.map((sessao) => {
+                const acumuladoHoras =
+                  encerradas
+                    .filter((s) => s.inicio.getTime() <= sessao.inicio.getTime())
+                    .sort((a, b) => a.inicio.getTime() - b.inicio.getTime())
+                    .reduce((total, s) => total + calcularDuracaoSessao(s), 0) /
+                    3_600_000
+
+                const registros = registrosPorSessao[sessao.id] ?? []
+                const registrosTrilha = registros.filter(
+                  (r) =>
+                    r.tipo === 'Marco' ||
+                    r.tipo === 'Região mapeada' ||
+                    r.tipo === 'Diário',
+                )
+
+                return (
+                  <SessaoTrilha
+                    key={sessao.id}
+                    sessao={sessao}
+                    registros={registrosTrilha}
+                    horasAcumuladas={acumuladoHoras}
+                    expandido={expansoes.has(sessao.id)}
+                    aoAlternar={() => alternarExpansao(sessao.id)}
+                    estaAtiva={sessao.id === sessaoAtiva?.id}
+                  />
+                )
+              })}
           </div>
         )}
       </div>
@@ -283,6 +323,7 @@ type SessaoTrilhaProps = {
   horasAcumuladas: number
   expandido: boolean
   aoAlternar: () => void
+  estaAtiva?: boolean
 }
 
 function SessaoTrilha({
@@ -291,47 +332,63 @@ function SessaoTrilha({
   horasAcumuladas,
   expandido,
   aoAlternar,
+  estaAtiva,
 }: SessaoTrilhaProps) {
-  const registrosTrilha = registros.filter(
-    (r) => r.tipo === 'Marco' || r.tipo === 'Região mapeada',
-  )
+  const [expansaoTexto, setExpansaoTexto] = useState(false)
 
-  const restantes = registrosTrilha.slice(2)
+  const duracaoSessao = calcularDuracaoSessao(sessao)
+  const linhaCinza = `${formatarDataCurta(sessao.inicio)} · ${formatarDuracao(duracaoSessao)} (Acum. ${formatarHorasCurto(horasAcumuladas)})`
+  const semRegistros = registros.length === 0
 
   return (
-    <article className="trilha-sessao-card">
-      <div className="trilha-sessao-topo" onClick={aoAlternar} role="button" tabIndex={0}>
-        <div className="trilha-sessao-numero">
-          Sessão {sessao.numero}
-        </div>
-        <div className="trilha-sessao-detalhes">
-          <span>{formatarData(sessao.inicio)}</span>
-          <span>·</span>
-          <span>{formatarDuracao(calcularDuracaoSessao(sessao))}</span>
-          <span>·</span>
-          <span>+{horasAcumuladas.toFixed(0)}h acumuladas</span>
-        </div>
-        <Milestone size={16} strokeWidth={1.75} aria-hidden="true" />
-      </div>
+    <article
+      className={`trilha-sessao${estaAtiva ? ' trilha-sessao-ativa-item' : ''}`}
+    >
+      <div className="trilha-ponto-sessao" aria-hidden="true" />
+      <div className="trilha-sessao-conteudo">
+        <button
+          type="button"
+          className="trilha-sessao-topo"
+          onClick={() => aoAlternar()}
+          aria-label={`Sessão ${sessao.numero}`}
+        >
+          <div className="trilha-sessao-numero">
+            Sessão {sessao.numero}{estaAtiva ? ' · em andamento' : ''}
+          </div>
+          <div className="trilha-sessao-linha">{linhaCinza}</div>
+        </button>
 
-      {expandido && (
-        <ul className="trilha-registros">
-          {registrosTrilha.map((registro) => (
-            <li key={registro.id} className="trilha-registro">
-              <span className="trilha-registro-tipo">{registro.tipo}</span>
-              <p className="trilha-registro-texto">
-                {expandido ? registro.texto : textoCurto(registro.texto)}
-              </p>
-            </li>
-          ))}
-          {restantes.length > 0 && (
-            <li className="trilha-registro trilha-registro-mais">
-              + {restantes.length} registro
-                {restantes.length !== 1 ? 's' : ''}
-            </li>
-          )}
-        </ul>
-      )}
+        {semRegistros && (
+          <p className="trilha-sem-registros">Sem registros nesta sessão.</p>
+        )}
+
+        {registros.length > 0 && (
+          <div className="trilha-registros">
+            {registros.map((registro) => (
+              <li key={registro.id} className="trilha-registro">
+                <span className="trilha-registro-tipo">{registro.tipo}</span>
+                <p
+                  className={`trilha-registro-texto${expansaoTexto ? '' : ' trilha-texto-curto'}`}
+                  onClick={() => setExpansaoTexto(!expansaoTexto)}
+                >
+                  {expansaoTexto ? registro.texto : textoCurto(registro.texto)}
+                </p>
+              </li>
+            ))}
+          </div>
+        )}
+
+        {expandido && registros.length > 0 && (
+          <div className="trilha-registros">
+            {registros.map((registro) => (
+              <li key={registro.id} className="trilha-registro">
+                <span className="trilha-registro-tipo">{registro.tipo}</span>
+                <p className="trilha-registro-texto">{registro.texto}</p>
+              </li>
+            ))}
+          </div>
+        )}
+      </div>
     </article>
   )
 }

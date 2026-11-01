@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { calcularRotulosTrilha } from '../TrilhaCronologica'
+import { calcularRotulosTrilha, trilhasOrdenadas } from '../TrilhaCronologica'
 
 function sessao(id: string, numero: number, horas: number): any {
   const inicio = new Date('2026-01-01T10:00:00.000Z')
@@ -50,5 +50,47 @@ describe('calcularRotulosTrilha', () => {
 
     expect(rotulos[rotulos.length - 1].posicao).toBe(100)
     expect(rotulos[rotulos.length - 1].ehUltimo).toBe(true)
+  })
+})
+
+function sessaoComData(id: string, numero: number, data: string): any {
+  const inicio = new Date(data)
+  const fim = new Date(inicio.getTime() + 2 * 3_600_000)
+  return { id, numero, inicio, fim, tempoPausado: 0, pausadoEm: null }
+}
+
+describe('trilhasOrdenadas', () => {
+  it('ordena sessões da mais recente para a mais antiga', () => {
+    const sessoes = [
+      sessaoComData('s1', 1, '2026-01-01T10:00:00.000Z'),
+      sessaoComData('s3', 3, '2026-01-03T10:00:00.000Z'),
+      sessaoComData('s2', 2, '2026-01-02T10:00:00.000Z'),
+    ]
+
+    const ordenadas = trilhasOrdenadas(null, sessoes)
+
+    expect(ordenadas.map((s) => s.numero)).toEqual([3, 2, 1])
+  })
+
+  it('coloca a sessão em andamento primeiro', () => {
+    const ativa = sessaoComData('sa', 5, '2026-01-01T10:00:00.000Z')
+    ativa.fim = null
+    const encerrada = sessaoComData('se', 4, '2026-01-05T10:00:00.000Z')
+
+    const ordenadas = trilhasOrdenadas(ativa, [encerrada])
+
+    expect(ordenadas.map((s) => s.numero)).toEqual([5, 4])
+  })
+
+  it('ordena pelo início da sessão, não pela ordem do banco', () => {
+    const sessoes = [
+      sessaoComData('s1', 1, '2026-01-05T10:00:00.000Z'),
+      sessaoComData('s2', 2, '2026-01-01T10:00:00.000Z'),
+      sessaoComData('s3', 3, '2026-01-03T10:00:00.000Z'),
+    ]
+
+    const ordenadas = trilhasOrdenadas(null, sessoes)
+
+    expect(ordenadas.map((s) => s.numero)).toEqual([1, 3, 2])
   })
 })
