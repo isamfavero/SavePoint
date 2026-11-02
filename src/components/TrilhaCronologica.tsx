@@ -1,6 +1,6 @@
 import { ChevronRight, Route } from 'lucide-react'
 import { useState } from 'react'
-import { formatarDuracao, formatarHorasCurto } from '../dominio/cronometro'
+import { formatarHorasCurto } from '../dominio/cronometro'
 import type { Registro, Sessao } from '../data'
 
 type RegistroTrilha = Registro & {
@@ -94,10 +94,12 @@ function calcularDuracaoSessao(sessao: Sessao): number {
 }
 
 function formatarDataCurta(data: Date): string {
-  return new Intl.DateTimeFormat('pt-BR', {
-    day: '2-digit',
+  const dia = data.getDate()
+  const mes = new Intl.DateTimeFormat('pt-BR', {
     month: 'short',
   }).format(data)
+
+  return `${dia} ${mes}`
 }
 
 function textoCurto(texto: string): string {
@@ -133,7 +135,6 @@ export function TrilhaCronologica({
   const [expansoes, setExpansoes] = useState<Set<string>>(new Set())
 
   const encerradas = sessoes.filter((s) => s.fim !== null)
-  const todasOrdenadas = trilhasOrdenadas(sessaoAtiva, encerradas)
 
   const ultimaEncerrada = encerradas.length > 0 ? encerradas[0] : null
 
@@ -177,8 +178,8 @@ export function TrilhaCronologica({
     )
   }
 
-  const sessoesVisuais = todasOrdenadas.slice(0, 2)
-  const sessoesRecolhidas = todasOrdenadas.slice(2)
+  const sessoesVisuais = encerradas.slice(0, 2)
+  const sessoesRecolhidas = encerradas.slice(2)
 
   return (
     <section className="trilha" aria-label="Trilha cronológica">
@@ -233,7 +234,7 @@ export function TrilhaCronologica({
           <div className="trilha-sessao-info">
             <span className="trilha-sessao-titulo">Sessão {sessaoAtiva.numero} · em andamento</span>
             <span className="trilha-sessao-tempo">
-              {formatarDuracao(calcularDuracaoSessao(sessaoAtiva))}
+              {formatarDuracaoCurto(calcularDuracaoSessao(sessaoAtiva))}
             </span>
           </div>
         </div>
@@ -337,13 +338,11 @@ function SessaoTrilha({
   const [expansaoTexto, setExpansaoTexto] = useState(false)
 
   const duracaoSessao = calcularDuracaoSessao(sessao)
-  const linhaCinza = `${formatarDataCurta(sessao.inicio)} · ${formatarDuracao(duracaoSessao)} (Acum. ${formatarHorasCurto(horasAcumuladas)})`
+  const linhaCinza = `${formatarDataCurta(sessao.inicio)} · ${formatarDuracaoCurto(duracaoSessao)} (Acum. ${formatarHorasCurto(horasAcumuladas)})`
   const semRegistros = registros.length === 0
 
   return (
-    <article
-      className={`trilha-sessao${estaAtiva ? ' trilha-sessao-ativa-item' : ''}`}
-    >
+    <article className={`trilha-sessao${estaAtiva ? ' trilha-sessao-ativa-item' : ''}`}>
       <div className="trilha-ponto-sessao" aria-hidden="true" />
       <div className="trilha-sessao-conteudo">
         <button
@@ -366,13 +365,23 @@ function SessaoTrilha({
           <div className="trilha-registros">
             {registros.map((registro) => (
               <li key={registro.id} className="trilha-registro">
-                <span className="trilha-registro-tipo">{registro.tipo}</span>
-                <p
-                  className={`trilha-registro-texto${expansaoTexto ? '' : ' trilha-texto-curto'}`}
-                  onClick={() => setExpansaoTexto(!expansaoTexto)}
-                >
-                  {expansaoTexto ? registro.texto : textoCurto(registro.texto)}
-                </p>
+                {registro.tipo === 'Diário' ? (
+                  <p className="trilha-registro-diario">
+                    <span className="trilha-registro-aspas">“</span>
+                    {expansaoTexto ? registro.texto : textoCurto(registro.texto)}{expansaoTexto ? '' : '…'}
+                    <span className="trilha-registro-aspas">”</span>
+                  </p>
+                ) : (
+                  <>
+                    <span className="trilha-registro-tipo">{registro.tipo}</span>
+                    <p
+                      className={`trilha-registro-texto${expansaoTexto ? '' : ' trilha-texto-curto'}`}
+                      onClick={() => setExpansaoTexto(!expansaoTexto)}
+                    >
+                      {expansaoTexto ? registro.texto : textoCurto(registro.texto)}{expansaoTexto ? '' : '…'}
+                    </p>
+                  </>
+                )}
               </li>
             ))}
           </div>
@@ -382,8 +391,18 @@ function SessaoTrilha({
           <div className="trilha-registros">
             {registros.map((registro) => (
               <li key={registro.id} className="trilha-registro">
-                <span className="trilha-registro-tipo">{registro.tipo}</span>
-                <p className="trilha-registro-texto">{registro.texto}</p>
+                {registro.tipo === 'Diário' ? (
+                  <p className="trilha-registro-diario">
+                    <span className="trilha-registro-aspas">“</span>
+                    {registro.texto}
+                    <span className="trilha-registro-aspas">”</span>
+                  </p>
+                ) : (
+                  <>
+                    <span className="trilha-registro-tipo">{registro.tipo}</span>
+                    <p className="trilha-registro-texto">{registro.texto}</p>
+                  </>
+                )}
               </li>
             ))}
           </div>
@@ -391,4 +410,15 @@ function SessaoTrilha({
       </div>
     </article>
   )
+}
+
+function formatarDuracaoCurto(ms: number): string {
+  const totalMinutos = Math.max(0, Math.floor(ms / 60_000))
+  const h = Math.floor(totalMinutos / 60)
+  const m = totalMinutos % 60
+
+  if (h === 0 && m === 0) return '<1m'
+  if (h === 0) return `${m}m`
+  if (m === 0) return `${h}h`
+  return `${h}h${m}m`
 }

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   formatarDuracao,
+  formatarDuracaoCurto,
   formatarHorasCurto,
   formatarQuantidadeSessoes,
   formatarTempoCurto,
@@ -19,6 +20,18 @@ describe('formatarDuracao', () => {
 
   it('não mostra durações negativas', () => {
     expect(formatarDuracao(-5_000)).toBe('00:00:00')
+  })
+})
+
+describe('formatarDuracaoCurto', () => {
+  it('trunca para minutos inteiros', () => {
+    expect(formatarDuracaoCurto(0)).toBe('<1m')
+    expect(formatarDuracaoCurto(30_000)).toBe('<1m')
+    expect(formatarDuracaoCurto(59_000)).toBe('<1m')
+    expect(formatarDuracaoCurto(60_000)).toBe('1m')
+    expect(formatarDuracaoCurto(45 * 60_000)).toBe('45m')
+    expect(formatarDuracaoCurto(2 * 3_600_000 + 30 * 60_000)).toBe('2h30m')
+    expect(formatarDuracaoCurto(13 * 3_600_000 + 29 * 60_000)).toBe('13h29m')
   })
 })
 

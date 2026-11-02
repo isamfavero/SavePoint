@@ -36,6 +36,17 @@ export function formatarHorasCurto(horas: number): string {
   return `${h}h${m}`
 }
 
+export function formatarDuracaoCurto(ms: number): string {
+  const totalMinutos = Math.max(0, Math.floor(ms / 60_000))
+  const h = Math.floor(totalMinutos / 60)
+  const m = totalMinutos % 60
+
+  if (h === 0 && m === 0) return '<1m'
+  if (h === 0) return `${m}m`
+  if (m === 0) return `${h}h`
+  return `${h}h${m}m`
+}
+
 export function formatarQuantidadeSessoes(total: number): string {
   return `${total} ${total === 1 ? 'sessão' : 'sessões'}`
 }
