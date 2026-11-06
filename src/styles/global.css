@@ -2672,7 +2672,7 @@ textarea {
 .trilha-ponto-sessao {
   position: absolute;
   left: calc(12px - 4px);
-  top: 24px;
+  top: 4px;
   width: 10px;
   height: 10px;
   border-radius: 50%;
@@ -2681,8 +2681,10 @@ textarea {
   z-index: 2;
 }
 
+.trilha-ponto-sessao-recente,
 .trilha-sessao-ativa-item .trilha-ponto-sessao {
   background: #f2b84b;
+  border: none;
   box-shadow: 0 0 10px rgba(242, 184, 75, 0.7);
   animation: trilha-pulso 2s infinite;
 }
@@ -2699,6 +2701,10 @@ textarea {
 }
 
 /* Conteúdo de cada sessão */
+
+.trilha-sessao {
+  position: relative;
+}
 
 .trilha-sessao-conteudo {
   position: relative;
@@ -2769,14 +2775,13 @@ textarea {
   gap: 8px;
 }
 
-.trilha-registro-tipo {
+.trilha-registro-icone {
   flex: 0 0 auto;
   color: #f2b84b;
   font-size: 0.68rem;
   font-weight: 700;
   letter-spacing: 0.06em;
   line-height: 1;
-  text-transform: uppercase;
 }
 
 .trilha-registro-texto {

@@ -1,4 +1,4 @@
-import { ChevronRight, Route } from 'lucide-react'
+import { ChevronRight, Flag, Map, Route } from 'lucide-react'
 import { useState } from 'react'
 import { formatarDuracaoCurto } from '../dominio/cronometro'
 import type { Registro, Sessao } from '../data'
@@ -137,6 +137,7 @@ export function TrilhaCronologica({
   const encerradas = sessoes.filter((s) => s.fim !== null)
 
   const ultimaEncerrada = encerradas.length > 0 ? encerradas[0] : null
+  const maisRecenteId = encerradas.length > 0 ? encerradas[0].id : null
 
   const ultimoMarco =
     registrosPorSessao[ultimaEncerrada?.id ?? '']?.filter(
@@ -265,6 +266,7 @@ export function TrilhaCronologica({
               expandido={expansoes.has(sessao.id)}
               aoAlternar={() => alternarExpansao(sessao.id)}
               estaAtiva={sessao.id === sessaoAtiva?.id}
+              isMaisRecente={sessao.id === maisRecenteId}
             />
           )
         })}
@@ -308,6 +310,7 @@ export function TrilhaCronologica({
                     expandido={expansoes.has(sessao.id)}
                     aoAlternar={() => alternarExpansao(sessao.id)}
                     estaAtiva={sessao.id === sessaoAtiva?.id}
+                    isMaisRecente={sessao.id === maisRecenteId}
                   />
                 )
               })}
@@ -325,6 +328,7 @@ type SessaoTrilhaProps = {
   expandido: boolean
   aoAlternar: () => void
   estaAtiva?: boolean
+  isMaisRecente?: boolean
 }
 
 function SessaoTrilha({
@@ -334,6 +338,7 @@ function SessaoTrilha({
   expandido,
   aoAlternar,
   estaAtiva,
+  isMaisRecente = false,
 }: SessaoTrilhaProps) {
   const [expansaoTexto, setExpansaoTexto] = useState(false)
 
@@ -341,9 +346,11 @@ function SessaoTrilha({
   const linhaCinza = `${formatarDataCurta(sessao.inicio)} · ${formatarDuracaoCurto(duracaoSessao)} (Acum. ${formatarDuracaoCurto(horasAcumuladas * 3_600_000)})`
   const semRegistros = registros.length === 0
 
+  const ehMaisRecente = estaAtiva || isMaisRecente
+
   return (
     <article className={`trilha-sessao${estaAtiva ? ' trilha-sessao-ativa-item' : ''}`}>
-      <div className="trilha-ponto-sessao" aria-hidden="true" />
+      <div className={`trilha-ponto-sessao${ehMaisRecente ? ' trilha-ponto-sessao-recente' : ''}`} aria-hidden="true" />
       <div className="trilha-sessao-conteudo">
         <button
           type="button"
@@ -368,39 +375,24 @@ function SessaoTrilha({
                 {registro.tipo === 'Diário' ? (
                   <p className="trilha-registro-diario">
                     <span className="trilha-registro-aspas">“</span>
-                    {expansaoTexto ? registro.texto : textoCurto(registro.texto)}{expansaoTexto ? '' : '…'}
+                    {(expandido || expansaoTexto) ? registro.texto : textoCurto(registro.texto)}{(expandido || expansaoTexto) ? '' : '…'}
                     <span className="trilha-registro-aspas">”</span>
                   </p>
                 ) : (
                   <>
-                    <span className="trilha-registro-tipo">{registro.tipo}</span>
+                    <span className="trilha-registro-icone" aria-hidden="true">
+                      {registro.tipo === 'Marco' ? (
+                        <Flag size={14} strokeWidth={1.75} />
+                      ) : (
+                        <Map size={14} strokeWidth={1.75} />
+                      )}
+                    </span>
                     <p
-                      className={`trilha-registro-texto${expansaoTexto ? '' : ' trilha-texto-curto'}`}
+                      className={`trilha-registro-texto${(expandido || expansaoTexto) ? '' : ' trilha-texto-curto'}`}
                       onClick={() => setExpansaoTexto(!expansaoTexto)}
                     >
-                      {expansaoTexto ? registro.texto : textoCurto(registro.texto)}{expansaoTexto ? '' : '…'}
+                      {(expandido || expansaoTexto) ? registro.texto : textoCurto(registro.texto)}{(expandido || expansaoTexto) ? '' : '…'}
                     </p>
-                  </>
-                )}
-              </li>
-            ))}
-          </div>
-        )}
-
-        {expandido && registros.length > 0 && (
-          <div className="trilha-registros">
-            {registros.map((registro) => (
-              <li key={registro.id} className="trilha-registro">
-                {registro.tipo === 'Diário' ? (
-                  <p className="trilha-registro-diario">
-                    <span className="trilha-registro-aspas">“</span>
-                    {registro.texto}
-                    <span className="trilha-registro-aspas">”</span>
-                  </p>
-                ) : (
-                  <>
-                    <span className="trilha-registro-tipo">{registro.tipo}</span>
-                    <p className="trilha-registro-texto">{registro.texto}</p>
                   </>
                 )}
               </li>
