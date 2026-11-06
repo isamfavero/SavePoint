@@ -47,6 +47,16 @@ export function formatarDuracaoCurto(ms: number): string {
   return `${h}h${m}m`
 }
 
+export function formatarDuracaoTrilha(ms: number): string {
+  const totalMinutos = Math.max(0, Math.floor(ms / 60_000))
+  const h = Math.floor(totalMinutos / 60)
+  const m = totalMinutos % 60
+
+  if (h === 0 && m === 0) return '0h'
+  if (m === 0) return `${h}h`
+  return `${h}h${m}`
+}
+
 export function formatarQuantidadeSessoes(total: number): string {
   return `${total} ${total === 1 ? 'sessão' : 'sessões'}`
 }

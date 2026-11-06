@@ -1,4 +1,4 @@
-import { formatarDuracaoCurto } from '../dominio/cronometro'
+import { formatarDuracaoTrilha } from '../dominio/cronometro'
 
 type ChipSessaoProps = {
   numero: number
@@ -31,7 +31,7 @@ export function ChipSessao({
       <span className="mini-cronometro-ponto" aria-hidden="true" />
       <span className="mini-cronometro-rotulo">Sessão {numero}</span>
       <span className="mini-cronometro-tempo">
-        {pausada ? 'Pausada' : formatarDuracaoCurto(duracaoMs)}
+        {pausada ? 'Pausada' : formatarDuracaoTrilha(duracaoMs)}
       </span>
     </>
   )

@@ -1,6 +1,6 @@
 import { ChevronRight, Flag, Map, Route } from 'lucide-react'
 import { useState } from 'react'
-import { formatarDuracaoCurto } from '../dominio/cronometro'
+import { formatarDuracaoTrilha } from '../dominio/cronometro'
 import type { Registro, Sessao } from '../data'
 
 type RegistroTrilha = Registro & {
@@ -38,16 +38,16 @@ export function calcularRotulosTrilha(
     { posicao: 0, horas: 0, texto: '0h', ehUltimo: false },
   ]
 
-  let acumuladoHoras = 0
-  const barraLargura = horasTotais > 0 ? horasTotais : 1
+  let acumuladoMs = 0
+  const totalMs = horasTotais * 3_600_000
 
   for (const sessao of ordenadas) {
-    acumuladoHoras += calcularDuracaoSessao(sessao) / 3_600_000
+    acumuladoMs += calcularDuracaoSessao(sessao)
 
     pontos.push({
-      posicao: Math.min((acumuladoHoras / barraLargura) * 100, 100),
-      horas: acumuladoHoras,
-      texto: formatarDuracaoCurto(acumuladoHoras * 3_600_000),
+      posicao: totalMs > 0 ? Math.min((acumuladoMs / totalMs) * 100, 100) : 100,
+      horas: acumuladoMs / 3_600_000,
+      texto: formatarDuracaoTrilha(acumuladoMs),
       ehUltimo: false,
     })
   }
@@ -55,27 +55,28 @@ export function calcularRotulosTrilha(
   if (pontos.length > 1) {
     const ultimo = pontos[pontos.length - 1]
     ultimo.ehUltimo = true
-    ultimo.texto = formatarDuracaoCurto(horasTotais * 3_600_000)
+    ultimo.texto = formatarDuracaoTrilha(totalMs)
     ultimo.horas = horasTotais
   }
 
-  const resultado: PontoRotulo[] = []
-  let ultimaPosicao: number | null = null
+  // Regra de sobreposição: o rótulo "0h" e o rótulo do último ponto SEMPRE aparecem.
+  // Se dois rótulos ficarem a menos de 36 px um do outro, esconde-se o anterior,
+  // nunca o último.
+  const resultado: PontoRotulo[] = [pontos[0]]
 
-  for (const ponto of pontos) {
-    if (
-      resultado.length > 0 &&
-      resultado[resultado.length - 1].texto === ponto.texto
-    ) {
-      continue
+  for (let i = 1; i < pontos.length; i++) {
+    const ponto = pontos[i]
+    const ultimoMantido = resultado[resultado.length - 1]
+    const muitoPerto = ponto.posicao - ultimoMantido.posicao < 36
+
+    if (ponto.ehUltimo) {
+      if (muitoPerto && resultado.length > 1) {
+        resultado.pop()
+      }
+      resultado.push(ponto)
+    } else if (!muitoPerto) {
+      resultado.push(ponto)
     }
-
-    if (ultimaPosicao !== null && ponto.posicao - ultimaPosicao < 10) {
-      continue
-    }
-
-    resultado.push(ponto)
-    ultimaPosicao = ponto.posicao
   }
 
   return resultado
@@ -219,7 +220,9 @@ export function TrilhaCronologica({
         <div className="trilha-voce-esta-aqui">
           <span className="trilha-ponto-aqui" aria-hidden="true" />
           <div className="trilha-voce-textos">
-            <span className="trilha-rotulo-aqui">VOCÊ ESTÁ AQUI · {formatarDuracaoCurto(horasTotais * 3_600_000)}</span>
+            <span className="trilha-rotulo-aqui">
+              VOCÊ ESTÁ AQUI · {formatarDuracaoTrilha(horasTotais * 3_600_000)}
+            </span>
             <p className="trilha-ondem-parei">
               {tipoOndeParei && textoOndeParei
                 ? textoCurto(textoOndeParei)
@@ -235,7 +238,7 @@ export function TrilhaCronologica({
           <div className="trilha-sessao-info">
             <span className="trilha-sessao-titulo">Sessão {sessaoAtiva.numero} · em andamento</span>
             <span className="trilha-sessao-tempo">
-              {formatarDuracaoCurto(calcularDuracaoSessao(sessaoAtiva))}
+              {formatarDuracaoTrilha(calcularDuracaoSessao(sessaoAtiva))}
             </span>
           </div>
         </div>
@@ -343,7 +346,7 @@ function SessaoTrilha({
   const [expansaoTexto, setExpansaoTexto] = useState(false)
 
   const duracaoSessao = calcularDuracaoSessao(sessao)
-  const linhaCinza = `${formatarDataCurta(sessao.inicio)} · ${formatarDuracaoCurto(duracaoSessao)} (Acum. ${formatarDuracaoCurto(horasAcumuladas * 3_600_000)})`
+  const linhaCinza = `${formatarDataCurta(sessao.inicio)} · ${formatarDuracaoTrilha(duracaoSessao)} (Acum. ${formatarDuracaoTrilha(horasAcumuladas * 3_600_000)})`
   const semRegistros = registros.length === 0
 
   const ehMaisRecente = estaAtiva || isMaisRecente
