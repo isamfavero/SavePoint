@@ -16,16 +16,16 @@ describe('calcularRotulosTrilha', () => {
     const sessoes = [sessao('s1', 1, 2.5)]
     const rotulos = calcularRotulosTrilha(sessoes, 2.5)
 
-    expect(rotulos.map((r) => r.texto)).toEqual(['0h', '2h30'])
+    expect(rotulos.map((r) => r.texto)).toEqual(['0h', '2h30m'])
     expect(rotulos[0]).toMatchObject({ posicao: 0, texto: '0h', ehUltimo: false })
-    expect(rotulos[1]).toMatchObject({ posicao: 100, texto: '2h30', ehUltimo: true })
+    expect(rotulos[1]).toMatchObject({ posicao: 100, texto: '2h30m', ehUltimo: true })
   })
 
   it('formata horas com minutos quando não zero', () => {
     const sessoes = [sessao('s1', 1, 12.5)]
     const rotulos = calcularRotulosTrilha(sessoes, 12.5)
 
-    expect(rotulos.map((r) => r.texto)).toEqual(['0h', '12h30'])
+    expect(rotulos.map((r) => r.texto)).toEqual(['0h', '12h30m'])
   })
 
   it('omite minutos quando são zero', () => {

@@ -1,6 +1,6 @@
 import { ChevronRight, Route } from 'lucide-react'
 import { useState } from 'react'
-import { formatarHorasCurto } from '../dominio/cronometro'
+import { formatarDuracaoCurto } from '../dominio/cronometro'
 import type { Registro, Sessao } from '../data'
 
 type RegistroTrilha = Registro & {
@@ -47,7 +47,7 @@ export function calcularRotulosTrilha(
     pontos.push({
       posicao: Math.min((acumuladoHoras / barraLargura) * 100, 100),
       horas: acumuladoHoras,
-      texto: formatarHorasCurto(acumuladoHoras),
+      texto: formatarDuracaoCurto(acumuladoHoras * 3_600_000),
       ehUltimo: false,
     })
   }
@@ -55,7 +55,7 @@ export function calcularRotulosTrilha(
   if (pontos.length > 1) {
     const ultimo = pontos[pontos.length - 1]
     ultimo.ehUltimo = true
-    ultimo.texto = formatarHorasCurto(horasTotais)
+    ultimo.texto = formatarDuracaoCurto(horasTotais * 3_600_000)
     ultimo.horas = horasTotais
   }
 
@@ -218,7 +218,7 @@ export function TrilhaCronologica({
         <div className="trilha-voce-esta-aqui">
           <span className="trilha-ponto-aqui" aria-hidden="true" />
           <div className="trilha-voce-textos">
-            <span className="trilha-rotulo-aqui">VOCÊ ESTÁ AQUI · {formatarHorasCurto(horasTotais)}</span>
+            <span className="trilha-rotulo-aqui">VOCÊ ESTÁ AQUI · {formatarDuracaoCurto(horasTotais * 3_600_000)}</span>
             <p className="trilha-ondem-parei">
               {tipoOndeParei && textoOndeParei
                 ? textoCurto(textoOndeParei)
@@ -338,7 +338,7 @@ function SessaoTrilha({
   const [expansaoTexto, setExpansaoTexto] = useState(false)
 
   const duracaoSessao = calcularDuracaoSessao(sessao)
-  const linhaCinza = `${formatarDataCurta(sessao.inicio)} · ${formatarDuracaoCurto(duracaoSessao)} (Acum. ${formatarHorasCurto(horasAcumuladas)})`
+  const linhaCinza = `${formatarDataCurta(sessao.inicio)} · ${formatarDuracaoCurto(duracaoSessao)} (Acum. ${formatarDuracaoCurto(horasAcumuladas * 3_600_000)})`
   const semRegistros = registros.length === 0
 
   return (
@@ -410,15 +410,4 @@ function SessaoTrilha({
       </div>
     </article>
   )
-}
-
-function formatarDuracaoCurto(ms: number): string {
-  const totalMinutos = Math.max(0, Math.floor(ms / 60_000))
-  const h = Math.floor(totalMinutos / 60)
-  const m = totalMinutos % 60
-
-  if (h === 0 && m === 0) return '<1m'
-  if (h === 0) return `${m}m`
-  if (m === 0) return `${h}h`
-  return `${h}h${m}m`
 }
