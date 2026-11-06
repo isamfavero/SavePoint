@@ -47,6 +47,26 @@ export function formatarDuracaoCurto(ms: number): string {
   return `${h}h${m}m`
 }
 
+export function formatarAcumuladoTrilha(ms: number): string {
+  const totalMinutos = Math.max(0, Math.floor(ms / 60_000))
+  const h = Math.floor(totalMinutos / 60)
+  const m = totalMinutos % 60
+
+  return `${h}h${String(m).padStart(2, '0')}`
+}
+
+export function formatarDataSessaoTrilha(data: Date): string {
+  const dia = data.getDate()
+  const mes = new Intl.DateTimeFormat('pt-BR', {
+    month: 'short',
+  })
+    .format(data)
+    .replace('.', '')
+    .trim()
+
+  return `${dia} ${mes}`
+}
+
 export function formatarDuracaoTrilha(ms: number): string {
   const totalMinutos = Math.max(0, Math.floor(ms / 60_000))
   const h = Math.floor(totalMinutos / 60)

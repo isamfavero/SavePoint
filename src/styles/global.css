@@ -2698,118 +2698,169 @@ textarea {
   }
 }
 
-/* Conteúdo de cada sessão */
+/* Conteúdo e cartão de cada sessão */
+
+.trilha-sessoes {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
 
 .trilha-sessao {
   position: relative;
+  display: flex;
+  align-items: flex-start;
 }
 
-.trilha-sessao-conteudo {
-  position: relative;
-  padding-left: 34px;
-  margin-top: 14px;
+.trilha-ponto-sessao {
+  position: absolute;
+  left: 14px;
+  top: 14px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #6DD8CF;
+  border: 2px solid #1D1F28;
+  transform: translate(-50%, -50%);
+  z-index: 2;
 }
 
-.trilha-sessao-topo {
-  display: inline-flex;
-  flex-direction: column;
-  gap: 2px;
-  cursor: pointer;
+.trilha-ponto-sessao-recente,
+.trilha-sessao-ativa-item .trilha-ponto-sessao {
+  background: #f2b84b;
+  border: none;
+  box-shadow: 0 0 10px rgba(242, 184, 75, 0.7);
+  animation: trilha-pulso 2s infinite;
+}
+
+@keyframes trilha-pulso {
+  0%, 100% {
+    box-shadow: 0 0 10px rgba(242, 184, 75, 0.7);
+    transform: translate(-50%, -50%) scale(1);
+  }
+  50% {
+    box-shadow: 0 0 20px rgba(242, 184, 75, 0.9);
+    transform: translate(-50%, -50%) scale(1.15);
+  }
+}
+
+.trilha-sessao-card {
+  margin-left: 28px;
+  width: calc(100% - 28px);
+  background: #181920;
+  border: 1px solid #282A32;
+  border-radius: 16px;
+  padding: 12px;
+}
+
+.trilha-sessao-cabecalho {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 8px;
   background: none;
   border: none;
   padding: 0;
-  color: inherit;
-  font: inherit;
+  margin: 0;
+  cursor: pointer;
   text-align: left;
-  text-decoration: none;
+  font: inherit;
+  color: inherit;
+  width: 100%;
 }
 
-.trilha-sessao-topo:focus-visible {
-  outline: none;
+.trilha-sessao-cabecalho:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+  border-radius: 4px;
 }
 
-.trilha-sessao-numero {
-  color: var(--color-text);
-  font-size: 18px;
+.trilha-sessao-titulo {
+  font-family: var(--font-display);
+  font-size: 20px;
   font-weight: 700;
   letter-spacing: -0.02em;
-  line-height: 1.1;
+  line-height: 1.15;
+  color: var(--color-text);
 }
 
-.trilha-sessao-linha {
+.trilha-sessao-meta {
   color: var(--color-text-muted);
-  font-size: 0.72rem;
+  font-size: 12px;
   font-weight: 500;
   line-height: 1.3;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 100%;
 }
 
 .trilha-sem-registros {
   margin: 8px 0 0;
   color: var(--color-text-muted);
-  font-size: 0.72rem;
+  font-size: 0.75rem;
   font-weight: 500;
   line-height: 1.3;
 }
 
-/* Caixa escura dos itens da sessão */
+/* Itens da sessão: caixas próprias */
 
-.trilha-registros {
+.trilha-itens-lista {
   display: flex;
   flex-direction: column;
   gap: 6px;
   margin-top: 10px;
-  padding: 10px;
-  border-radius: 12px;
-  background: #11131B;
 }
 
-.trilha-registro {
+.trilha-item-caixa {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   gap: 8px;
+  background: #11131B;
+  border-radius: 10px;
+  padding: 8px 10px;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: border-color 0.15s ease;
 }
 
-.trilha-registro-icone {
+.trilha-item-caixa:hover {
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+.trilha-item-caixa:focus-visible {
+  outline: none;
+  border-color: var(--color-accent);
+}
+
+.trilha-item-icone {
   flex: 0 0 auto;
   color: #f2b84b;
-  font-size: 0.68rem;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-.trilha-registro-texto {
+.trilha-item-diario .trilha-item-icone {
+  color: #6DD8CF;
+}
+
+.trilha-item-texto {
+  margin: 0;
   flex: 1;
   color: var(--color-text);
   font-size: 0.82rem;
-  line-height: 1.5;
-  overflow-wrap: anywhere;
-  white-space: pre-wrap;
-}
-
-.trilha-texto-curto {
-  display: -webkit-box;
-  -webkit-line-clamp: 1;
-  -webkit-box-orient: vertical;
+  line-height: 1.4;
+  white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  max-width: 100%;
 }
 
-/* Diário: itálico verde-água entre aspas, sem rótulo */
-
-.trilha-registro-diario {
-  flex: 1;
-  color: #6DD8CF;
-  font-size: 0.82rem;
-  font-style: italic;
-  line-height: 1.5;
-  overflow-wrap: anywhere;
+.trilha-item-texto.trilha-item-expandido {
   white-space: pre-wrap;
+  overflow: visible;
+  text-overflow: unset;
+}
+
+.trilha-item-diario .trilha-item-texto {
+  color: #6DD8CF;
+  font-style: italic;
 }
 
 .trilha-registro-aspas {
@@ -2817,33 +2868,68 @@ textarea {
   font-weight: 700;
 }
 
-/* Grupo recolhido */
+/* Grupo de sessões anteriores */
 
 .trilha-grupo-anteriores {
-  margin-top: 14px;
-  padding-top: 14px;
-  border-top: 1px dashed var(--color-border);
+  margin-left: 28px;
+  margin-top: 4px;
 }
 
 .trilha-botao-expandir {
-  display: inline-flex;
+  display: flex;
   align-items: center;
-  gap: 6px;
+  justify-content: space-between;
+  gap: 8px;
   width: 100%;
-  padding: 10px 14px;
-  border: 1px solid var(--color-border);
+  padding: 10px 12px;
+  background: #11131B;
+  border: 1px solid #282A32;
   border-radius: 12px;
-  background: transparent;
-  color: var(--color-accent);
-  font-size: 0.82rem;
-  font-weight: 600;
-  line-height: 1;
   cursor: pointer;
   text-align: left;
+  transition: border-color 0.15s ease;
 }
 
 .trilha-botao-expandir:hover {
   border-color: var(--color-accent);
+}
+
+.trilha-expandir-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.trilha-expandir-icone {
+  flex: 0 0 auto;
+  color: var(--color-text-muted);
+}
+
+.trilha-expandir-texto {
+  color: var(--color-text-muted);
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.trilha-expandir-acao {
+  flex: 0 0 auto;
+  color: #f2b84b;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.trilha-sessoes-recolhidas-lista {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 12px;
+  margin-left: -28px;
 }
 
 /* ---------- Objetivos ---------- */

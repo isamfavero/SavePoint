@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
+  formatarAcumuladoTrilha,
+  formatarDataSessaoTrilha,
   formatarDuracao,
   formatarDuracaoCurto,
   formatarHorasCurto,
@@ -32,6 +34,23 @@ describe('formatarDuracaoCurto', () => {
     expect(formatarDuracaoCurto(45 * 60_000)).toBe('45m')
     expect(formatarDuracaoCurto(2 * 3_600_000 + 30 * 60_000)).toBe('2h30m')
     expect(formatarDuracaoCurto(13 * 3_600_000 + 29 * 60_000)).toBe('13h29m')
+  })
+})
+
+describe('formatarAcumuladoTrilha', () => {
+  it('formata horas acumuladas com minutos sempre com 2 dígitos sem sufixo m', () => {
+    expect(formatarAcumuladoTrilha(0)).toBe('0h00')
+    expect(formatarAcumuladoTrilha(10 * 3_600_000)).toBe('10h00')
+    expect(formatarAcumuladoTrilha(12 * 3_600_000 + 30 * 60_000)).toBe('12h30')
+    expect(formatarAcumuladoTrilha(13 * 3_600_000 + 5 * 60_000)).toBe('13h05')
+  })
+})
+
+describe('formatarDataSessaoTrilha', () => {
+  it('formata data curta sem ponto e sem zero à esquerda', () => {
+    expect(formatarDataSessaoTrilha(new Date(2026, 10, 1, 12, 0, 0))).toBe('1 nov')
+    expect(formatarDataSessaoTrilha(new Date(2026, 9, 31, 12, 0, 0))).toBe('31 out')
+    expect(formatarDataSessaoTrilha(new Date(2026, 9, 21, 12, 0, 0))).toBe('21 out')
   })
 })
 
