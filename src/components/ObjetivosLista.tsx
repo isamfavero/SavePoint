@@ -1,9 +1,8 @@
-import { Check, SquarePen } from 'lucide-react'
+import { Check, Plus } from 'lucide-react'
 import { useState } from 'react'
 import { useServicoSavePoint } from '../contexts/ServicoContext'
 import { useSessaoAtiva } from '../contexts/SessaoAtivaContext'
 import type { Registro } from '../data'
-import { formatarTempoRelativo } from '../dominio/biblioteca'
 
 type ObjetivosListaProps = {
   jogoId: string
@@ -28,8 +27,12 @@ export function ObjetivosLista({
 
   const aberta = sessaoAtiva?.id ?? null
 
-  const abertos = objetivos.filter((o) => !o.concluido)
-  const concluidos = objetivos.filter((o) => o.concluido)
+  const abertos = objetivos
+    .filter((o) => !o.concluido)
+    .sort((a, b) => b.dataHora.getTime() - a.dataHora.getTime())
+  const concluidos = objetivos
+    .filter((o) => o.concluido)
+    .sort((a, b) => b.dataHora.getTime() - a.dataHora.getTime())
 
   async function aoAlternarConclusao(objetivo: Registro) {
     setSalvandoId(objetivo.id)
@@ -80,137 +83,116 @@ export function ObjetivosLista({
     }
   }
 
-  function abrirModalIniciarSessao() {
-    setModalAberto(true)
-  }
-
   function fecharModal() {
     setModalAberto(false)
   }
 
   return (
     <section className="objetivos" aria-label="Objetivos">
-      <div className="objetivos-topo">
-        <h2 className="objetivos-titulo">Objetivos</h2>
-
-        {aberta && (
-          <div className="objetivo-novo">
-            <span className="objetivo-novo-hash" aria-hidden="true">
-              #
+      <div className="objetivos-cabecalho">
+        <div className="objetivos-cabecalho-esquerda">
+          <span className="objetivos-cabecalho-icone" aria-hidden="true">
+            <Check size={20} strokeWidth={2} />
+          </span>
+          <span className="objetivos-cabecalho-titulo">
+            OBJETIVOS EM ABERTO
+          </span>
+        </div>
+        <div className="objetivos-cabecalho-direita">
+          {concluidos.length > 0 && (
+            <span className="objetivos-contador">
+              {concluidos.length} Concluído
             </span>
-            <input
-              type="text"
-              value={textoNovo}
-              onChange={(evento) => {
-                setTextoNovo(evento.target.value)
-                if (erro) setErro(null)
-              }}
-              placeholder="Novo objetivo"
-              aria-label="Novo objetivo"
-            />
+          )}
+          {aberta ? (
+            <>
+              <input
+                type="text"
+                className="objetivos-input-novo"
+                value={textoNovo}
+                onChange={(evento) => {
+                  setTextoNovo(evento.target.value)
+                  if (erro) setErro(null)
+                }}
+                placeholder="Novo objetivo"
+                aria-label="Novo objetivo"
+              />
+              <button
+                type="button"
+                className="objetivos-botao-adicionar"
+                onClick={aoAdicionarObjetivo}
+                disabled={iniciando}
+                aria-label="Adicionar objetivo"
+              >
+                {iniciando ? 'Criando...' : <Plus size={16} strokeWidth={2} aria-hidden="true" />}
+              </button>
+            </>
+          ) : (
             <button
               type="button"
-              className="botao-mini objetivo-botao-adicionar"
-              onClick={aoAdicionarObjetivo}
-              disabled={iniciando}
+              className="objetivos-botao-adicionar"
+              onClick={() => setModalAberto(true)}
+              aria-label="Adicionar objetivo"
             >
-              {iniciando ? 'Criando...' : <SquarePen size={14} strokeWidth={2} aria-hidden="true" />}
+              <Plus size={16} strokeWidth={2} aria-hidden="true" />
             </button>
-          </div>
-        )}
+          )}
+        </div>
       </div>
 
       {erro && (
-        <p className="campo-erro" role="alert">
-          {erro}
-        </p>
-      )}
-
-      {!aberta && (
-        <div className="objetivo-sem-sessao">
-          <p>
-            Para adicionar objetivos, inicie uma sessão primeiro.
-          </p>
-          <button
-            type="button"
-            className="botao-primario compacto"
-            onClick={abrirModalIniciarSessao}
-            disabled={iniciando}
-          >
-            {iniciando ? 'Iniciando...' : 'Iniciar sessão'}
-          </button>
-        </div>
-      )}
-
-      {abertos.length > 0 && (
-        <>
-          <h3 className="objetivos-grupo-titulo">Em aberto</h3>
-          <ul className="objetivos-lista">
-            {abertos.map((objetivo) => (
-              <li key={objetivo.id} className="objetivo-item">
-                <button
-                  type="button"
-                  className="objetivo-caixa"
-                  onClick={() => void aoAlternarConclusao(objetivo)}
-                  disabled={salvandoId === objetivo.id}
-                  aria-pressed="false"
-                >
-                  <span className="objetivo-caixa-texto">
-                    {objetivo.texto}
-                  </span>
-                </button>
-              </li>
-            ))}
-          </ul>
-        </>
-      )}
-
-      {concluidos.length > 0 && (
-        <>
-          <h3 className="objetivos-grupo-titulo">Concluídos</h3>
-          <ul className="objetivos-lista">
-            {concluidos.map((objetivo) => (
-              <li key={objetivo.id} className="objetivo-item">
-                <button
-                  type="button"
-                  className="objetivo-caixa objetivo-caixa-concluido"
-                  onClick={() => void aoAlternarConclusao(objetivo)}
-                  disabled={salvandoId === objetivo.id}
-                  aria-pressed="true"
-                >
-                  <Check size={15} strokeWidth={2} aria-hidden="true" />
-                  <span className="objetivo-caixa-texto">
-                    {objetivo.texto}
-                  </span>
-                  {objetivo.concluidoSessaoId === aberta && (
-                    <span className="objetivo-status">Concluído nesta sessão</span>
-                  )}
-                  {!objetivo.concluidoSessaoId && objetivo.concluidoEm && (
-                    <span className="objetivo-status">
-                      Concluído {formatarTempoRelativo(objetivo.concluidoEm)}
-                    </span>
-                  )}
-                </button>
-              </li>
-            ))}
-          </ul>
-        </>
+        <p className="campo-erro" role="alert">{erro}</p>
       )}
 
       {abertos.length === 0 && concluidos.length === 0 && (
-        <div className="estado-vazio objetivos-vazio">
-          <span className="estado-vazio-icone" aria-hidden="true">
-            <SquarePen size={32} strokeWidth={1.75} />
-          </span>
-          <h2>Nenhum objetivo ainda</h2>
-          <p>
-            Crie objetivos para marcar o que você ainda quer conquistar neste
-            jogo.
-          </p>
-        </div>
+        <p className="objetivos-vazio">
+          Nenhum objetivo ainda. Toque em + para adicionar o primeiro.
+        </p>
       )}
 
-      {aberta && modalAberto && (
+      {abertos.length > 0 && (
+        <ul className="objetivos-lista">
+          {abertos.map((objetivo) => (
+            <li key={objetivo.id} className="objetivo-item">
+              <button
+                type="button"
+                className="objetivo-caixa"
+                onClick={() => void aoAlternarConclusao(objetivo)}
+                disabled={salvandoId === objetivo.id}
+                aria-pressed="false"
+              >
+                <span className="objetivo-checkbox" aria-hidden="true" />
+                <span className="objetivo-texto">{objetivo.texto}</span>
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+
+      {concluidos.length > 0 && (
+        <ul className="objetivos-lista">
+          {concluidos.map((objetivo) => (
+            <li key={objetivo.id} className="objetivo-item">
+              <button
+                type="button"
+                className="objetivo-caixa objetivo-caixa-concluido"
+                onClick={() => void aoAlternarConclusao(objetivo)}
+                disabled={salvandoId === objetivo.id}
+                aria-pressed="true"
+              >
+                <span className="objetivo-checkbox objetivo-checkbox-marcado" aria-hidden="true">
+                  <Check size={16} strokeWidth={2} />
+                </span>
+                <span className="objetivo-texto objetivo-texto-concluido">
+                  {objetivo.texto}
+                </span>
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+
+      {modalAberto && (
         <div className="modal-fundo">
           <div
             className="modal"
@@ -218,11 +200,12 @@ export function ObjetivosLista({
             aria-modal="true"
             aria-labelledby="titulo-objetivo-sessao"
           >
-            <h2 id="titulo-objetivo-sessao">Para adicionar objetivos, inicie uma sessão</h2>
-            <p>
-              Os objetivos ficam vinculados à sessão atual do jogo.
-            </p>
-
+            <h2 id="titulo-objetivo-sessao">
+              Para adicionar objetivos, inicie uma sessão
+            </h2>
+            {!aberta && (
+              <p>Os objetivos ficam vinculados à sessão atual do jogo.</p>
+            )}
             <div className="modal-acoes">
               <button
                 type="button"
