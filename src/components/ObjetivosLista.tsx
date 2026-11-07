@@ -1,4 +1,4 @@
-import { Check, Plus, X } from 'lucide-react'
+import { Check, Pencil, Plus, Trash2, X } from 'lucide-react'
 import { useState } from 'react'
 import { useServicoSavePoint } from '../contexts/ServicoContext'
 import { useSessaoAtiva } from '../contexts/SessaoAtivaContext'
@@ -25,6 +25,9 @@ export function ObjetivosLista({
   const [salvandoId, setSalvandoId] = useState<string | null>(null)
   const [novoObjetivoAberto, setNovoObjetivoAberto] = useState(false)
   const [textoNovo, setTextoNovo] = useState('')
+  const [editandoId, setEditandoId] = useState<string | null>(null)
+  const [textoEdicao, setTextoEdicao] = useState('')
+  const [objetivoParaApagar, setObjetivoParaApagar] = useState<Registro | null>(null)
 
   const aberta = sessaoAtiva?.id ?? null
 
@@ -99,6 +102,140 @@ export function ObjetivosLista({
 
   function fecharModal() {
     setModalAberto(false)
+  }
+
+  function abrirEdicao(objetivo: Registro) {
+    setEditandoId(objetivo.id)
+    setTextoEdicao(objetivo.texto)
+    setErro(null)
+  }
+
+  async function aoSalvarEdicao(objetivo: Registro) {
+    const limpo = textoEdicao.trim()
+
+    if (!limpo) {
+      setErro('O objetivo precisa de um texto.')
+      return
+    }
+
+    if (limpo === objetivo.texto) {
+      setEditandoId(null)
+      return
+    }
+
+    setSalvandoId(objetivo.id)
+    setErro(null)
+
+    try {
+      await servico.atualizarRegistro(objetivo.id, { texto: limpo })
+      setEditandoId(null)
+    } catch {
+      setErro('Não foi possível salvar o objetivo.')
+    } finally {
+      setSalvandoId(null)
+    }
+  }
+
+  async function aoApagar() {
+    if (!objetivoParaApagar) return
+
+    const alvo = objetivoParaApagar
+    setSalvandoId(alvo.id)
+    setErro(null)
+
+    try {
+      await servico.excluirRegistro(alvo.id)
+      setObjetivoParaApagar(null)
+      setEditandoId(null)
+    } catch {
+      setErro('Não foi possível apagar o objetivo.')
+    } finally {
+      setSalvandoId(null)
+    }
+  }
+
+  function renderizarItem(objetivo: Registro) {
+    const concluido = Boolean(objetivo.concluido)
+
+    if (editandoId === objetivo.id) {
+      return (
+        <li key={objetivo.id} className="objetivo-item">
+          <div className="objetivos-novo-campo objetivo-edicao">
+            <input
+              type="text"
+              className="objetivos-input-novo"
+              value={textoEdicao}
+              onChange={(evento) => setTextoEdicao(evento.target.value)}
+              aria-label="Texto do objetivo"
+              autoFocus
+              onKeyDown={(evento) => {
+                if (evento.key === 'Enter') {
+                  evento.preventDefault()
+                  void aoSalvarEdicao(objetivo)
+                } else if (evento.key === 'Escape') {
+                  setEditandoId(null)
+                }
+              }}
+            />
+            <button
+              type="button"
+              className="objetivos-botao-confirmar"
+              onClick={() => void aoSalvarEdicao(objetivo)}
+              disabled={salvandoId === objetivo.id || !textoEdicao.trim()}
+              aria-label="Salvar objetivo"
+            >
+              <Check size={16} strokeWidth={2} aria-hidden="true" />
+            </button>
+            <button
+              type="button"
+              className="objetivos-botao-cancelar objetivo-botao-apagar"
+              onClick={() => setObjetivoParaApagar(objetivo)}
+              aria-label="Apagar objetivo"
+            >
+              <Trash2 size={16} strokeWidth={1.75} aria-hidden="true" />
+            </button>
+            <button
+              type="button"
+              className="objetivos-botao-cancelar"
+              onClick={() => setEditandoId(null)}
+              aria-label="Cancelar edição"
+            >
+              <X size={16} strokeWidth={2} aria-hidden="true" />
+            </button>
+          </div>
+        </li>
+      )
+    }
+
+    return (
+      <li key={objetivo.id} className="objetivo-item">
+        <button
+          type="button"
+          className={`objetivo-caixa${concluido ? ' objetivo-caixa-concluido' : ''}`}
+          onClick={() => void aoAlternarConclusao(objetivo)}
+          disabled={salvandoId === objetivo.id}
+          aria-pressed={concluido}
+        >
+          <span
+            className={`objetivo-checkbox${concluido ? ' objetivo-checkbox-marcado' : ''}`}
+            aria-hidden="true"
+          >
+            {concluido && <Check size={16} strokeWidth={2} />}
+          </span>
+          <span className={`objetivo-texto${concluido ? ' objetivo-texto-concluido' : ''}`}>
+            {objetivo.texto}
+          </span>
+        </button>
+        <button
+          type="button"
+          className="objetivo-editar"
+          onClick={() => abrirEdicao(objetivo)}
+          aria-label={`Editar objetivo: ${objetivo.texto}`}
+        >
+          <Pencil size={15} strokeWidth={1.75} aria-hidden="true" />
+        </button>
+      </li>
+    )
   }
 
   return (
@@ -181,44 +318,46 @@ export function ObjetivosLista({
 
       {abertos.length > 0 && (
         <ul className="objetivos-lista">
-          {abertos.map((objetivo) => (
-            <li key={objetivo.id} className="objetivo-item">
-              <button
-                type="button"
-                className="objetivo-caixa"
-                onClick={() => void aoAlternarConclusao(objetivo)}
-                disabled={salvandoId === objetivo.id}
-                aria-pressed="false"
-              >
-                <span className="objetivo-checkbox" aria-hidden="true" />
-                <span className="objetivo-texto">{objetivo.texto}</span>
-              </button>
-            </li>
-          ))}
+          {abertos.map((objetivo) => renderizarItem(objetivo))}
         </ul>
       )}
 
       {concluidos.length > 0 && (
         <ul className="objetivos-lista">
-          {concluidos.map((objetivo) => (
-            <li key={objetivo.id} className="objetivo-item">
+          {concluidos.map((objetivo) => renderizarItem(objetivo))}
+        </ul>
+      )}
+
+      {objetivoParaApagar && (
+        <div className="modal-fundo">
+          <div
+            className="modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="titulo-apagar-objetivo"
+          >
+            <h2 id="titulo-apagar-objetivo">Apagar objetivo?</h2>
+            <p>“{objetivoParaApagar.texto}” sai da lista. Não dá para desfazer.</p>
+            <div className="modal-acoes">
               <button
                 type="button"
-                className="objetivo-caixa objetivo-caixa-concluido"
-                onClick={() => void aoAlternarConclusao(objetivo)}
-                disabled={salvandoId === objetivo.id}
-                aria-pressed="true"
+                className="botao-secundario"
+                onClick={() => setObjetivoParaApagar(null)}
+                autoFocus
               >
-                <span className="objetivo-checkbox objetivo-checkbox-marcado" aria-hidden="true">
-                  <Check size={16} strokeWidth={2} />
-                </span>
-                <span className="objetivo-texto objetivo-texto-concluido">
-                  {objetivo.texto}
-                </span>
+                Cancelar
               </button>
-            </li>
-          ))}
-        </ul>
+              <button
+                type="button"
+                className="botao-perigo compacto"
+                onClick={() => void aoApagar()}
+                disabled={salvandoId === objetivoParaApagar.id}
+              >
+                Apagar
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       {modalAberto && (

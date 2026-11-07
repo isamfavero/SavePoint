@@ -31,7 +31,7 @@ A primeira versão entrega o ciclo completo "adicionar jogo → jogar uma sessã
 - Biblioteca com filtros por situação do jogo.
 - Cronômetro de sessão: iniciar, pausar, encerrar.
 - Encerrar sessão com três campos: o que fiz, onde parei, próximo passo.
-- Anotações por tipo (Diário, Senhas, Manuscritos, Puzzles, Lembretes, Marco, Região mapeada e Objetivo) com tags, sempre ligadas a uma sessão.
+- Anotações por tipo (Diário, Senhas, Documentos, Puzzles, Lembretes, Marco, Região mapeada e Objetivo) com tags, sempre ligadas a uma sessão.
 - Objetivos em aberto por jogo (um tipo de anotação), que podem ser marcados como concluídos.
 - Jornada do jogo: trilha cronológica, estatísticas simples e diário de sessões.
 - Busca por texto nas anotações.
@@ -75,7 +75,7 @@ Tudo gira em torno da hierarquia Jogo → Sessão → Registro; as horas totais 
 | --- | --- | --- |
 | Jogo | id, nome, plataforma, gêneros (até 3), capa, situação (Jogando, Pausado, Concluído, Quero jogar) | Cada jogo é um "mundo" com seu próprio caderno |
 | Sessão | id, jogo, número, início, fim, tempo pausado, o que fiz, onde parei, próximo passo | Duração = fim − início − pausas. Só uma sessão ativa por vez |
-| Registro | id, jogo, sessão, tipo, texto, tags, data e hora, concluído (só para Objetivo) | Tipos: Diário, Senhas, Manuscritos, Puzzles, Lembretes, Marco, Região mapeada e Objetivo. Sessão obrigatória. Marco e Região mapeada aparecem na trilha cronológica; Objetivo aparece em Objetivos em aberto |
+| Registro | id, jogo, sessão, tipo, texto, tags, data e hora, concluído (só para Objetivo) | Tipos: Diário, Senhas, Documentos, Puzzles, Lembretes, Marco, Região mapeada e Objetivo. Sessão obrigatória. Marco e Região mapeada aparecem na trilha cronológica; Objetivo aparece em Objetivos em aberto |
 
 Marcos, regiões mapeadas e objetivos não são tabelas separadas: são tipos de Registro, e por isso também exigem sessão, data e hora.
 
@@ -131,7 +131,7 @@ Implemente o cronômetro de sessão da tela Jornada do jogo e a tela Encerrar Se
 ### Fatia 4 – Anotações
 
 ```text
-Implemente a tela Nova anotação e o botão que a abre. Campos: texto, tipo (Diário, Senhas, Manuscritos, Puzzles, Lembretes, Marco, Região mapeada e Objetivo, escolha única) e tags opcionais, com a opção de criar uma nova tag. Ao salvar, vincule a anotação à sessão ativa, mostrando o texto "Vinculada automaticamente à Sessão N". Se não houver sessão ativa, ofereça iniciar uma antes de salvar. Implemente também a tela Abrir notas, com as anotações de uma sessão agrupadas por categoria.
+Implemente a tela Nova anotação e o botão que a abre. Campos: texto, tipo (Diário, Senhas, Documentos, Puzzles, Lembretes, Marco, Região mapeada e Objetivo, escolha única) e tags opcionais, com a opção de criar uma nova tag. Ao salvar, vincule a anotação à sessão ativa, mostrando o texto "Vinculada automaticamente à Sessão N". Se não houver sessão ativa, ofereça iniciar uma antes de salvar. Implemente também a tela Abrir notas, com as anotações de uma sessão agrupadas por categoria.
 ```
 
 ### Fatia 5 – Jornada do jogo

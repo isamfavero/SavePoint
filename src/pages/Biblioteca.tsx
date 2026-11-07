@@ -3,14 +3,19 @@ import {
   Clock,
   Gamepad2,
   LibraryBig,
+  MoreVertical,
+  Pencil,
   Play,
   Plus,
+  Trash2,
 } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { CabecalhoMarca } from '../components/CabecalhoMarca'
 import { JogoCapa } from '../components/JogoCapa'
+import { useAviso } from '../contexts/AvisoContext'
 import { useJogoAtual } from '../contexts/JogoAtualContext'
+import { useServicoSavePoint } from '../contexts/ServicoContext'
 import {
   classeDaSituacao,
   contarJogosPorSituacao,
@@ -22,6 +27,7 @@ import {
   formatarTempoRelativo,
 } from '../dominio/biblioteca'
 import type { FiltroBiblioteca } from '../dominio/biblioteca'
+import { boasVindasJaVistas } from '../estado/boasVindas'
 import { useBiblioteca } from '../hooks/useBiblioteca'
 import type { Jogo } from '../data'
 
@@ -30,8 +36,34 @@ export function Biblioteca() {
   const { jogoAtualId, definirJogoAtual, limparJogoAtual } = useJogoAtual()
   const navigate = useNavigate()
   const [filtro, setFiltro] = useState<FiltroBiblioteca>('Todos')
+  const servico = useServicoSavePoint()
+  const { mostrarAviso } = useAviso()
+  const [menuJogoId, setMenuJogoId] = useState<string | null>(null)
+  const [exclusao, setExclusao] = useState<
+    { jogo: Jogo; sessoes: number; registros: number } | null
+  >(null)
+  const [excluindo, setExcluindo] = useState(false)
+  const [erroExclusao, setErroExclusao] = useState<string | null>(null)
+
+  // Fecha o menu de opções com Esc.
+  useEffect(() => {
+    if (!menuJogoId) return
+
+    function aoTeclar(evento: KeyboardEvent) {
+      if (evento.key === 'Escape') setMenuJogoId(null)
+    }
+
+    window.addEventListener('keydown', aoTeclar)
+    return () => window.removeEventListener('keydown', aoTeclar)
+  }, [menuJogoId])
 
   const jogos = useMemo(() => itens.map((item) => item.jogo), [itens])
+
+  // Primeira abertura, sem nenhum jogo: mostra as boas-vindas uma única vez.
+  useEffect(() => {
+    if (carregando || erro || jogos.length > 0) return
+    if (!boasVindasJaVistas()) navigate('/boas-vindas', { replace: true })
+  }, [carregando, erro, jogos.length, navigate])
 
   useEffect(() => {
     if (carregando || erro || !jogoAtualId) return
@@ -48,6 +80,35 @@ export function Biblioteca() {
   const destaque = escolherJogoEmDestaque(jogos, jogoAtualId)
   const contagens = contarJogosPorSituacao(jogos)
   const jogosFiltrados = filtrarJogos(jogos, filtro)
+
+  async function pedirExclusao(jogo: Jogo) {
+    setMenuJogoId(null)
+    setErroExclusao(null)
+
+    try {
+      setExclusao({ jogo, ...(await servico.contarDependentesDoJogo(jogo.id)) })
+    } catch {
+      setExclusao({ jogo, sessoes: 0, registros: 0 })
+    }
+  }
+
+  async function confirmarExclusao() {
+    if (!exclusao) return
+
+    setExcluindo(true)
+    setErroExclusao(null)
+
+    try {
+      await servico.excluirJogo(exclusao.jogo.id)
+      if (jogoAtualId === exclusao.jogo.id) limparJogoAtual()
+      mostrarAviso(`${exclusao.jogo.nome} foi excluído.`)
+      setExclusao(null)
+    } catch {
+      setErroExclusao('Não foi possível excluir o jogo. Tente novamente.')
+    } finally {
+      setExcluindo(false)
+    }
+  }
 
   function abrirJogo(jogo: Jogo) {
     definirJogoAtual(jogo.id)
@@ -172,10 +233,11 @@ export function Biblioteca() {
             <div className="grade-jogos">
               {jogosFiltrados.map((jogo) => {
                 const estatisticas = estatisticasPorJogo.get(jogo.id)
+                const menuAberto = menuJogoId === jogo.id
 
                 return (
+                  <div key={jogo.id} className="jogo-card-item">
                   <button
-                    key={jogo.id}
                     type="button"
                     className="jogo-card"
                     onClick={() => abrirJogo(jogo)}
@@ -208,6 +270,49 @@ export function Biblioteca() {
                       </span>
                     </span>
                   </button>
+
+                  <button
+                    type="button"
+                    className="jogo-card-opcoes"
+                    onClick={() => setMenuJogoId(menuAberto ? null : jogo.id)}
+                    aria-label={`Opções de ${jogo.nome}`}
+                    aria-haspopup="menu"
+                    aria-expanded={menuAberto}
+                  >
+                    <MoreVertical size={16} strokeWidth={1.75} aria-hidden="true" />
+                  </button>
+
+                  {menuAberto && (
+                    <>
+                      <div
+                        className="jogo-card-menu-fundo"
+                        onClick={() => setMenuJogoId(null)}
+                        aria-hidden="true"
+                      />
+                      <div className="jogo-card-menu" role="menu" aria-label={`Opções de ${jogo.nome}`}>
+                        <button
+                          type="button"
+                          role="menuitem"
+                          className="jogo-card-menu-item"
+                          onClick={() => navigate(`/jogo/${jogo.id}/editar`)}
+                          autoFocus
+                        >
+                          <Pencil size={15} strokeWidth={1.75} aria-hidden="true" />
+                          Editar
+                        </button>
+                        <button
+                          type="button"
+                          role="menuitem"
+                          className="jogo-card-menu-item jogo-card-menu-perigo"
+                          onClick={() => void pedirExclusao(jogo)}
+                        >
+                          <Trash2 size={15} strokeWidth={1.75} aria-hidden="true" />
+                          Excluir
+                        </button>
+                      </div>
+                    </>
+                  )}
+                  </div>
                 )
               })}
             </div>
@@ -224,6 +329,50 @@ export function Biblioteca() {
         >
           <Plus size={26} strokeWidth={1.75} aria-hidden="true" />
         </button>
+      )}
+
+      {exclusao && (
+        <div className="modal-fundo">
+          <div
+            className="modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="titulo-excluir-jogo"
+          >
+            <h2 id="titulo-excluir-jogo">Excluir {exclusao.jogo.nome}?</h2>
+            <p>
+              {exclusao.sessoes === 0 && exclusao.registros === 0
+                ? 'O jogo sai da sua biblioteca. Não dá para desfazer.'
+                : `Também serão apagadas ${formatarSessoes(exclusao.sessoes)} e ${
+                    exclusao.registros
+                  } ${exclusao.registros === 1 ? 'anotação' : 'anotações'}. Não dá para desfazer.`}
+            </p>
+            {erroExclusao && (
+              <p className="campo-erro" role="alert">
+                {erroExclusao}
+              </p>
+            )}
+            <div className="modal-acoes">
+              <button
+                type="button"
+                className="botao-secundario"
+                onClick={() => setExclusao(null)}
+                disabled={excluindo}
+                autoFocus
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                className="botao-perigo compacto"
+                onClick={() => void confirmarExclusao()}
+                disabled={excluindo}
+              >
+                {excluindo ? 'Excluindo...' : 'Excluir'}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </section>
   )

@@ -242,4 +242,14 @@ describe('trilhasOrdenadas', () => {
 
     expect(ordenadas.map((s) => s.numero)).toEqual([1, 3, 2])
   })
+
+  it('não repete a sessão ativa quando ela também vem na lista', () => {
+    const ativa = sessaoComData('sa', 2, '2026-01-02T10:00:00.000Z')
+    ativa.fim = null
+    const encerrada = sessaoComData('s1', 1, '2026-01-01T10:00:00.000Z')
+
+    const ordenadas = trilhasOrdenadas(ativa, [encerrada, ativa])
+
+    expect(ordenadas.map((s) => s.numero)).toEqual([2, 1])
+  })
 })

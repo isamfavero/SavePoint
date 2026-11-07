@@ -1,9 +1,11 @@
 import type { RepositorioSavePoint } from './repositorio'
 import type { Jogo, Registro, Sessao } from './tipos'
-import { normalizarTexto } from '../dominio/biblioteca'
+import { registroCorrespondeBusca } from '../dominio/busca'
+import { TIPOS_RENOMEADOS } from '../constantes'
 
 const NOME_BANCO_PADRAO = 'savepoint'
-const VERSAO_BANCO = 1
+// Versão 2: o tipo "Manuscritos" passou a se chamar "Documentos".
+const VERSAO_BANCO = 2
 
 const LOJA_JOGOS = 'jogos'
 const LOJA_SESSOES = 'sessoes'
@@ -29,12 +31,29 @@ function aguardarTransacao(transacao: IDBTransaction): Promise<void> {
   })
 }
 
+/** Converte registros gravados com nomes de tipo antigos (dentro da atualização do banco). */
+function renomearTiposAntigos(loja: IDBObjectStore): void {
+  const cursor = loja.openCursor()
+
+  cursor.onsuccess = () => {
+    const atual = cursor.result
+    if (!atual) return
+
+    const registro = atual.value as Registro
+    const novoTipo = TIPOS_RENOMEADOS[registro.tipo]
+
+    if (novoTipo) atual.update({ ...registro, tipo: novoTipo })
+    atual.continue()
+  }
+}
+
 function abrirBanco(nomeBanco: string): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
     const requisicao = indexedDB.open(nomeBanco, VERSAO_BANCO)
 
-    requisicao.onupgradeneeded = () => {
+    requisicao.onupgradeneeded = (evento) => {
       const banco = requisicao.result
+      const versaoAnterior = evento.oldVersion
 
       if (!banco.objectStoreNames.contains(LOJA_JOGOS)) {
         banco.createObjectStore(LOJA_JOGOS, { keyPath: 'id' })
@@ -50,13 +69,26 @@ function abrirBanco(nomeBanco: string): Promise<IDBDatabase> {
         registros.createIndex('jogoId', 'jogoId', { unique: false })
         registros.createIndex('sessaoId', 'sessaoId', { unique: false })
       }
+
+      if (versaoAnterior >= 1 && versaoAnterior < 2 && requisicao.transaction) {
+        renomearTiposAntigos(requisicao.transaction.objectStore(LOJA_REGISTROS))
+      }
     }
 
-    requisicao.onsuccess = () => resolve(requisicao.result)
+    requisicao.onsuccess = () => {
+      const banco = requisicao.result
+      // Se uma versão mais nova do app precisar atualizar o banco, esta aba cede a vez.
+      banco.onversionchange = () => banco.close()
+      resolve(banco)
+    }
     requisicao.onerror = () =>
       reject(requisicao.error ?? new Error('Não foi possível abrir o IndexedDB.'))
     requisicao.onblocked = () =>
-      reject(new Error('O IndexedDB está bloqueado por outra aba ou conexão.'))
+      reject(
+        new Error(
+          'O SavePoint está aberto em outra aba com uma versão antiga. Feche as outras abas e tente de novo.',
+        ),
+      )
   })
 }
 
@@ -216,13 +248,7 @@ export class RepositorioIndexedDb implements RepositorioSavePoint {
     )) as Registro[]
 
     return registros
-      .filter((registro) => {
-        const matchTexto = registro.texto && normalizarTexto(registro.texto).includes(texto)
-        const matchJogo = !jogoId || registro.jogoId === jogoId
-        const matchTipos = !tipos || tipos.includes(registro.tipo)
-
-        return matchTexto && matchJogo && matchTipos
-      })
+      .filter((registro) => registroCorrespondeBusca(registro, { texto, jogoId, tipos }))
       .sort((a, b) => b.dataHora.getTime() - a.dataHora.getTime())
       .slice(deslocamento, limite + deslocamento)
   }

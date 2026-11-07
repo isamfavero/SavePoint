@@ -1,6 +1,6 @@
 import type { RepositorioSavePoint } from './repositorio'
 import type { Jogo, Registro, Sessao } from './tipos'
-import { normalizarTexto } from '../dominio/biblioteca'
+import { registroCorrespondeBusca } from '../dominio/busca'
 
 function clonar<T>(valor: T): T {
   return structuredClone(valor)
@@ -110,13 +110,7 @@ export class RepositorioMemoria implements RepositorioSavePoint {
     const { texto, jogoId, tipos, limite = 30, deslocamento = 0 } = filtros
 
     return [...this.registros.values()]
-      .filter((registro) => {
-        const matchTexto = registro.texto && normalizarTexto(registro.texto).includes(texto)
-        const matchJogo = !jogoId || registro.jogoId === jogoId
-        const matchTipos = !tipos || tipos.includes(registro.tipo)
-
-        return matchTexto && matchJogo && matchTipos
-      })
+      .filter((registro) => registroCorrespondeBusca(registro, { texto, jogoId, tipos }))
       .sort((a, b) => b.dataHora.getTime() - a.dataHora.getTime())
       .slice(deslocamento, limite + deslocamento)
       .map(clonar)

@@ -1,6 +1,9 @@
-import { ChevronsUpDown, Flag, Map, NotebookPen, Route } from 'lucide-react'
+import { ChevronsUpDown, Route, SlidersHorizontal } from 'lucide-react'
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
+import { ICONE_POR_TIPO } from './iconesTipo'
+
+const MAXIMO_REGISTROS_POR_SESSAO = 5
 import {
   formatarAcumuladoTrilha,
   formatarDataSessaoTrilha,
@@ -122,9 +125,10 @@ export function trilhasOrdenadas(
   sessaoAtiva: Sessao | null,
   encerradas: Sessao[],
 ): Sessao[] {
-  const ordenadas = [...encerradas].sort(
-    (a, b) => b.inicio.getTime() - a.inicio.getTime(),
-  )
+  // A lista recebida pode já conter a sessão ativa; ela entra uma vez só, no topo.
+  const ordenadas = encerradas
+    .filter((sessao) => sessao.id !== sessaoAtiva?.id)
+    .sort((a, b) => b.inicio.getTime() - a.inicio.getTime())
 
   if (sessaoAtiva) {
     return [sessaoAtiva, ...ordenadas]
@@ -241,9 +245,9 @@ export function TrilhaCronologica({
       <div className="trilha-card">
         <div className="trilha-barra-container">
           <div className="trilha-eixos">
-            {rotulos.map((rotulo) => (
+            {rotulos.map((rotulo, indice) => (
               <span
-                key={rotulo.texto}
+                key={`${indice}-${rotulo.texto}`}
                 className={`trilha-eixo${rotulo.ehUltimo ? ' trilha-eixo-ultimo' : ''}`}
                 style={{ left: `${rotulo.posicao}%` }}
               >
@@ -293,10 +297,7 @@ export function TrilhaCronologica({
               {sessoesVisuais.map((sessao) => {
                 const duracaoMs = calcularDuracaoSessao(sessao)
                 const acumuladoMs = obterAcumuladoMs(sessao)
-                const registros = registrosPorSessao[sessao.id] ?? []
-                const registrosTrilha = registros.filter(
-                  (r) => r.tipo === 'Marco' || r.tipo === 'Região mapeada' || r.tipo === 'Diário',
-                )
+                const registrosTrilha = registrosPorSessao[sessao.id] ?? []
 
                 return (
                   <SessaoTrilha
@@ -335,10 +336,7 @@ export function TrilhaCronologica({
                       {sessoesRecolhidas.map((sessao) => {
                         const duracaoMs = calcularDuracaoSessao(sessao)
                         const acumuladoMs = obterAcumuladoMs(sessao)
-                        const registros = registrosPorSessao[sessao.id] ?? []
-                        const registrosTrilha = registros.filter(
-                          (r) => r.tipo === 'Marco' || r.tipo === 'Região mapeada' || r.tipo === 'Diário',
-                        )
+                        const registrosTrilha = registrosPorSessao[sessao.id] ?? []
 
                         return (
                           <SessaoTrilha
@@ -393,15 +391,11 @@ function SessaoTrilha({
   const semRegistros = registros.length === 0
   const ehMaisRecente = estaAtiva || isMaisRecente
 
-  // Separar itens de Marco/Região mapeada e Diário mais recente
-  const itensNaoDiario = registros.filter((r) => r.tipo === 'Marco' || r.tipo === 'Região mapeada')
-  const diarios = registros.filter((r) => r.tipo === 'Diário')
-  const diarioMaisRecente = diarios.length > 0 ? diarios[0] : null
-
-  const itensExibidos: RegistroTrilha[] = [...itensNaoDiario]
-  if (diarioMaisRecente) {
-    itensExibidos.push(diarioMaisRecente)
-  }
+  // Todos os registros da sessão, na ordem em que foram feitos. Para a trilha
+  // não ficar longa demais, mostra os mais recentes e indica quantos faltam.
+  const emOrdem = [...registros].sort((a, b) => a.dataHora.getTime() - b.dataHora.getTime())
+  const ocultos = Math.max(0, emOrdem.length - MAXIMO_REGISTROS_POR_SESSAO)
+  const itensExibidos: RegistroTrilha[] = emOrdem.slice(ocultos)
 
   const dataTexto = formatarDataSessaoTrilha(sessao.inicio)
   const duracaoTexto = estaAtiva
@@ -419,15 +413,24 @@ function SessaoTrilha({
         aria-hidden="true"
       />
       <div className="trilha-sessao-card">
-        <button
-          type="button"
-          className="trilha-sessao-cabecalho"
-          onClick={aoNavegarNotas}
-          aria-label={`Sessão ${sessao.numero}`}
-        >
-          <span className="trilha-sessao-titulo">Sessão {sessao.numero}</span>
-          <span className="trilha-sessao-meta">{metaTexto}</span>
-        </button>
+        <div className="trilha-sessao-topo">
+          <button
+            type="button"
+            className="trilha-sessao-cabecalho"
+            onClick={aoNavegarNotas}
+            aria-label={`Abrir notas da Sessão ${sessao.numero}`}
+          >
+            <span className="trilha-sessao-titulo">Sessão {sessao.numero}</span>
+            <span className="trilha-sessao-meta">{metaTexto}</span>
+          </button>
+          <Link
+            className="trilha-sessao-ajustes"
+            to={`/jornada/sessao/${sessao.id}/editar`}
+            aria-label={`Ajustes da Sessão ${sessao.numero}`}
+          >
+            <SlidersHorizontal size={16} strokeWidth={1.75} aria-hidden="true" />
+          </Link>
+        </div>
 
         {semRegistros && (
           <p className="trilha-sem-registros">Sem registros nesta sessão.</p>
@@ -435,17 +438,33 @@ function SessaoTrilha({
 
         {itensExibidos.length > 0 && (
           <div className="trilha-itens-lista">
+            {ocultos > 0 && (
+              <button type="button" className="trilha-mais-registros" onClick={aoNavegarNotas}>
+                + {ocultos} {ocultos === 1 ? 'registro anterior' : 'registros anteriores'}
+              </button>
+            )}
             {itensExibidos.map((registro) => {
               const expandido = expansoes.has(registro.id)
               const ehDiario = registro.tipo === 'Diário'
+              const Icone = ICONE_POR_TIPO[registro.tipo]
+              const concluido = registro.tipo === 'Objetivo' && registro.concluido
 
               return (
                 <div
                   key={registro.id}
-                  className={`trilha-item-caixa${ehDiario ? ' trilha-item-diario' : ''}`}
+                  className={[
+                    'trilha-item-caixa',
+                    ehDiario ? 'trilha-item-diario' : '',
+                    concluido ? 'trilha-item-concluido' : '',
+                  ]
+                    .filter(Boolean)
+                    .join(' ')}
                   onClick={() => aoAlternarExpansao(registro.id)}
                   role="button"
                   tabIndex={0}
+                  aria-expanded={expandido}
+                  aria-label={`${registro.tipo}: ${registro.texto}`}
+                  title={registro.tipo}
                   onKeyDown={(e) => {
                     if (e.key === 'Enter' || e.key === ' ') {
                       e.preventDefault()
@@ -454,13 +473,7 @@ function SessaoTrilha({
                   }}
                 >
                   <span className="trilha-item-icone" aria-hidden="true">
-                    {ehDiario ? (
-                      <NotebookPen size={16} strokeWidth={1.75} />
-                    ) : registro.tipo === 'Marco' ? (
-                      <Flag size={16} strokeWidth={1.75} />
-                    ) : (
-                      <Map size={16} strokeWidth={1.75} />
-                    )}
+                    <Icone size={16} strokeWidth={1.75} />
                   </span>
                   <p className={`trilha-item-texto${expandido ? ' trilha-item-expandido' : ''}`}>
                     {ehDiario && <span className="trilha-registro-aspas">“</span>}

@@ -59,6 +59,12 @@ export type DadosEncerramentoSessao = Partial<
   Pick<Sessao, 'oQueFiz' | 'ondeParei' | 'proximoPasso'>
 >
 
+export type AtualizacaoSessao = DadosEncerramentoSessao & {
+  inicio?: Date
+  /** Numa sessão aberta, informar o fim a encerra nesse instante. */
+  fim?: Date | null
+}
+
 export type DadosRegistro = {
   jogoId: string
   sessaoId: string

@@ -1,7 +1,7 @@
-import { ArrowLeft, NotebookPen } from 'lucide-react'
+import { ArrowLeft, NotebookPen, Pencil, SlidersHorizontal } from 'lucide-react'
 import { useEffect, useState } from 'react'
-import { Link, useParams } from 'react-router-dom'
-import { useServicoSavePoint } from '../contexts/ServicoContext'
+import { Link, useNavigate, useParams } from 'react-router-dom'
+import { useServicoSavePoint, useVersaoDados } from '../contexts/ServicoContext'
 import { TIPOS_REGISTRO } from '../constantes'
 import type { Jogo, Registro, Sessao } from '../data'
 
@@ -28,6 +28,8 @@ type Conteudo = {
 export function NotasSessao() {
   const { sessaoId } = useParams()
   const servico = useServicoSavePoint()
+  const versao = useVersaoDados()
+  const navigate = useNavigate()
   const [conteudo, setConteudo] = useState<Conteudo | null>(null)
   const [carregando, setCarregando] = useState(true)
   const [erro, setErro] = useState<string | null>(null)
@@ -79,7 +81,7 @@ export function NotasSessao() {
     return () => {
       ativo = false
     }
-  }, [servico, sessaoId])
+  }, [servico, sessaoId, versao])
 
   const grupos = conteudo
     ? TIPOS_REGISTRO.map((tipo) => ({
@@ -90,14 +92,34 @@ export function NotasSessao() {
       })).filter((grupo) => grupo.registros.length > 0)
     : []
 
+  function voltar() {
+    const indice = window.history.state?.idx
+
+    if (typeof indice === 'number' && indice > 0) {
+      navigate(-1)
+      return
+    }
+
+    navigate('/jornada', { replace: true })
+  }
+
   return (
     <section className="page notas-sessao" aria-label="Notas da sessão">
       <div className="notas-topo">
-        <Link className="botao-voltar" to="/jornada" aria-label="Voltar para a Jornada">
+        <button type="button" className="botao-voltar" onClick={voltar} aria-label="Voltar">
           <ArrowLeft size={20} strokeWidth={1.75} aria-hidden="true" />
-        </Link>
+        </button>
         {conteudo && (
-          <span className="notas-sessao-numero">Sessão {conteudo.sessao.numero}</span>
+          <span className="notas-topo-direita">
+            <span className="notas-sessao-numero">Sessão {conteudo.sessao.numero}</span>
+            <Link
+              className="botao-voltar"
+              to={`/jornada/sessao/${conteudo.sessao.id}/editar`}
+              aria-label={`Ajustes da Sessão ${conteudo.sessao.numero}`}
+            >
+              <SlidersHorizontal size={18} strokeWidth={1.75} aria-hidden="true" />
+            </Link>
+          </span>
         )}
       </div>
 
@@ -180,6 +202,14 @@ export function NotasSessao() {
                           {registro.concluido ? 'Concluído' : 'Pendente'}
                         </span>
                       )}
+
+                      <Link
+                        className="nota-editar"
+                        to={`/anotacao/${registro.id}/editar`}
+                        aria-label="Editar anotação"
+                      >
+                        <Pencil size={15} strokeWidth={1.75} aria-hidden="true" />
+                      </Link>
                     </div>
                   </li>
                 ))}

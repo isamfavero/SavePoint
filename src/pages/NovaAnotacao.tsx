@@ -6,20 +6,28 @@ import {
   KeyRound,
   Lightbulb,
   Map,
+  Pencil,
   Plus,
   Puzzle,
   Target,
+  Trash2,
   X,
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import type { FormEvent, KeyboardEvent } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useParams } from 'react-router-dom'
 import { ChipSessao } from '../components/ChipSessao'
 import { useAviso } from '../contexts/AvisoContext'
 import { useServicoSavePoint } from '../contexts/ServicoContext'
 import { useSessaoAtiva } from '../contexts/SessaoAtivaContext'
-import type { TipoRegistro } from '../data'
+import type { Registro, TipoRegistro } from '../data'
+
+type DadosEdicao = {
+  registro: Registro
+  numeroSessao: number | null
+  nomeJogo: string | null
+}
 
 const TAGS_SUGERIDAS = [
   '#código',
@@ -43,7 +51,7 @@ type OpcaoTipo = {
 const CATEGORIAS: OpcaoTipo[] = [
   { tipo: 'Diário', descricao: 'Crônicas', Icone: BookOpen },
   { tipo: 'Senhas', descricao: 'Chaves & IDs', Icone: KeyRound },
-  { tipo: 'Manuscritos', descricao: 'Pergaminhos', Icone: FileText },
+  { tipo: 'Documentos', descricao: 'Cartas & arquivos', Icone: FileText },
   { tipo: 'Puzzles', descricao: 'Enigmas', Icone: Puzzle },
   { tipo: 'Lembretes', descricao: 'Minhas dicas & pendências', Icone: Lightbulb, largo: true },
 ]
@@ -134,6 +142,13 @@ export function NovaAnotacao() {
     pausada,
   } = useSessaoAtiva()
   const navigate = useNavigate()
+  const { registroId } = useParams()
+  const modoEdicao = Boolean(registroId)
+
+  const [edicao, setEdicao] = useState<DadosEdicao | null>(null)
+  const [erroEdicao, setErroEdicao] = useState<string | null>(null)
+  const [confirmarExclusao, setConfirmarExclusao] = useState(false)
+  const [excluindo, setExcluindo] = useState(false)
 
   const [texto, setTexto] = useState('')
   const [tipo, setTipo] = useState<TipoRegistro | null>(null)
@@ -148,15 +163,56 @@ export function NovaAnotacao() {
   const [salvando, setSalvando] = useState(false)
   const [confirmarDescarte, setConfirmarDescarte] = useState(false)
 
-  const jogoId = sessao?.jogoId ?? null
+  const jogoId = modoEdicao ? (edicao?.registro.jogoId ?? null) : (sessao?.jogoId ?? null)
 
   useEffect(() => {
-    if (carregando) return
+    if (modoEdicao || carregando) return
 
     if (!sessao) {
       navigate('/jornada', { replace: true })
     }
-  }, [carregando, navigate, sessao])
+  }, [carregando, modoEdicao, navigate, sessao])
+
+  // Modo edição: carrega a anotação e preenche o formulário.
+  useEffect(() => {
+    if (!registroId) return
+
+    let ativo = true
+
+    ;(async () => {
+      try {
+        const registro = await servico.obterRegistro(registroId)
+
+        if (!registro) {
+          if (ativo) setErroEdicao('Esta anotação não existe mais.')
+          return
+        }
+
+        const [sessaoDoRegistro, jogoDoRegistro] = await Promise.all([
+          servico.obterSessao(registro.sessaoId),
+          servico.obterJogo(registro.jogoId),
+        ])
+
+        if (!ativo) return
+
+        setEdicao({
+          registro,
+          numeroSessao: sessaoDoRegistro?.numero ?? null,
+          nomeJogo: jogoDoRegistro?.nome ?? null,
+        })
+        setTexto(registro.texto)
+        setTipo(registro.tipo)
+        setTags(registro.tags)
+        setTagsCriadas(registro.tags)
+      } catch {
+        if (ativo) setErroEdicao('Não foi possível abrir esta anotação.')
+      }
+    })()
+
+    return () => {
+      ativo = false
+    }
+  }, [registroId, servico])
 
   useEffect(() => {
     let ativo = true
@@ -201,8 +257,35 @@ export function NovaAnotacao() {
     navigate('/jornada', { replace: true })
   }
 
+  function houveMudanca(): boolean {
+    if (!edicao) return Boolean(texto.trim())
+
+    const original = edicao.registro
+    return (
+      texto.trim() !== original.texto ||
+      tipo !== original.tipo ||
+      tags.join(' ') !== original.tags.join(' ')
+    )
+  }
+
+  async function aoExcluir() {
+    if (!edicao) return
+
+    setExcluindo(true)
+
+    try {
+      await servico.excluirRegistro(edicao.registro.id)
+      mostrarAviso('Anotação apagada.')
+      voltar()
+    } catch (falha) {
+      setConfirmarExclusao(false)
+      setExcluindo(false)
+      setErroGeral(mensagemDoErro(falha, 'Não foi possível apagar a anotação.'))
+    }
+  }
+
   function aoFechar() {
-    if (texto.trim()) {
+    if (houveMudanca()) {
       setConfirmarDescarte(true)
       return
     }
@@ -259,7 +342,28 @@ export function NovaAnotacao() {
     setErros(novosErros)
     setErroGeral(null)
 
-    if (!texto.trim() || !tipo || !sessao) return
+    if (!texto.trim() || !tipo) return
+
+    if (edicao) {
+      setSalvando(true)
+
+      try {
+        await servico.atualizarRegistro(edicao.registro.id, {
+          texto: texto.trim(),
+          tipo,
+          tags,
+        })
+        mostrarAviso('Anotação atualizada.')
+        voltar()
+      } catch (falha) {
+        setErroGeral(mensagemDoErro(falha, 'Não foi possível salvar a anotação.'))
+        setSalvando(false)
+      }
+
+      return
+    }
+
+    if (!sessao) return
 
     setSalvando(true)
 
@@ -280,15 +384,36 @@ export function NovaAnotacao() {
     }
   }
 
-  if (carregando || !sessao) {
+  if (modoEdicao && erroEdicao) {
     return (
       <div className="app-shell app-shell-anotacao">
         <main className="app-main anotacao-main">
-          <p className="biblioteca-aviso">Carregando a sessão...</p>
+          <div className="estado-vazio">
+            <h2>Não foi possível abrir</h2>
+            <p>{erroEdicao}</p>
+            <button type="button" className="botao-secundario" onClick={voltar}>
+              Voltar
+            </button>
+          </div>
         </main>
       </div>
     )
   }
+
+  if (modoEdicao ? !edicao : carregando || !sessao) {
+    return (
+      <div className="app-shell app-shell-anotacao">
+        <main className="app-main anotacao-main">
+          <p className="biblioteca-aviso">
+            {modoEdicao ? 'Carregando a anotação...' : 'Carregando a sessão...'}
+          </p>
+        </main>
+      </div>
+    )
+  }
+
+  const numeroSessao = edicao ? edicao.numeroSessao : (sessao?.numero ?? null)
+  const nomeJogo = edicao ? edicao.nomeJogo : (jogo?.nome ?? null)
 
   return (
     <div className="app-shell app-shell-anotacao">
@@ -298,16 +423,25 @@ export function NovaAnotacao() {
             type="button"
             className="botao-voltar"
             onClick={aoFechar}
-            aria-label="Fechar nova anotação"
+            aria-label={edicao ? 'Fechar edição da anotação' : 'Fechar nova anotação'}
           >
             <X size={20} strokeWidth={1.75} aria-hidden="true" />
           </button>
 
-          <ChipSessao numero={sessao.numero} duracaoMs={duracaoMs} pausada={pausada} />
+          {edicao ? (
+            <span className="selo-novo">
+              <Pencil size={11} strokeWidth={1.75} aria-hidden="true" />
+              {numeroSessao ? `Sessão ${numeroSessao}` : 'Editando'}
+            </span>
+          ) : (
+            sessao && (
+              <ChipSessao numero={sessao.numero} duracaoMs={duracaoMs} pausada={pausada} />
+            )
+          )}
         </div>
 
-        <p className="anotacao-jogo">{jogo?.nome?.toUpperCase() ?? 'Jogo'}</p>
-        <h1 className="formulario-titulo">Nova anotação</h1>
+        <p className="anotacao-jogo">{nomeJogo?.toUpperCase() ?? 'JOGO'}</p>
+        <h1 className="formulario-titulo">{edicao ? 'Editar anotação' : 'Nova anotação'}</h1>
 
         <form id="form-nova-anotacao" className="anotacao-form" onSubmit={aoSalvar} noValidate>
           <div className="campo">
@@ -461,12 +595,63 @@ export function NovaAnotacao() {
           disabled={salvando}
         >
           <Check size={18} strokeWidth={2.2} aria-hidden="true" />
-          {salvando ? 'Registrando...' : 'Registrar anotação'}
+          {edicao
+            ? salvando
+              ? 'Salvando...'
+              : 'Salvar alterações'
+            : salvando
+              ? 'Registrando...'
+              : 'Registrar anotação'}
         </button>
-        <p className="anotacao-vinculo">
-          Vinculada automaticamente à Sessão {sessao.numero}
-        </p>
+        {edicao ? (
+          <button
+            type="button"
+            className="botao-perigo-texto"
+            onClick={() => setConfirmarExclusao(true)}
+            disabled={salvando}
+          >
+            <Trash2 size={15} strokeWidth={1.75} aria-hidden="true" />
+            Apagar anotação
+          </button>
+        ) : (
+          <p className="anotacao-vinculo">
+            Vinculada automaticamente à Sessão {numeroSessao}
+          </p>
+        )}
       </div>
+
+      {confirmarExclusao && (
+        <div className="modal-fundo">
+          <div
+            className="modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="titulo-apagar-anotacao"
+          >
+            <h2 id="titulo-apagar-anotacao">Apagar anotação?</h2>
+            <p>Ela sai da sessão, da Jornada e da busca. Não dá para desfazer.</p>
+            <div className="modal-acoes">
+              <button
+                type="button"
+                className="botao-secundario"
+                onClick={() => setConfirmarExclusao(false)}
+                disabled={excluindo}
+                autoFocus
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                className="botao-perigo compacto"
+                onClick={() => void aoExcluir()}
+                disabled={excluindo}
+              >
+                {excluindo ? 'Apagando...' : 'Apagar'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {confirmarDescarte && (
         <div className="modal-fundo">
@@ -476,8 +661,14 @@ export function NovaAnotacao() {
             aria-modal="true"
             aria-labelledby="titulo-descartar"
           >
-            <h2 id="titulo-descartar">Descartar anotação?</h2>
-            <p>O texto que você escreveu será perdido.</p>
+            <h2 id="titulo-descartar">
+              {edicao ? 'Descartar alterações?' : 'Descartar anotação?'}
+            </h2>
+            <p>
+              {edicao
+                ? 'As mudanças que você fez nesta anotação serão perdidas.'
+                : 'O texto que você escreveu será perdido.'}
+            </p>
             <div className="modal-acoes">
               <button
                 type="button"

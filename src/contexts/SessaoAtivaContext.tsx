@@ -1,8 +1,8 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react'
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
 import { calcularDuracaoSessao } from '../data'
 import type { DadosEncerramentoSessao, Jogo, Sessao } from '../data'
-import { useServicoSavePoint } from './ServicoContext'
+import { useServicoSavePoint, useVersaoDados } from './ServicoContext'
 
 type SessaoAtivaContextValue = {
   sessao: Sessao | null
@@ -62,6 +62,34 @@ export function SessaoAtivaProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     void recarregar()
   }, [recarregar])
+
+  // Quando os dados mudam em outro lugar (editar ou apagar uma sessão, apagar
+  // um jogo, importar dados), confere a sessão ativa sem mostrar "carregando".
+  const versao = useVersaoDados()
+  const primeiraVersao = useRef(true)
+
+  useEffect(() => {
+    if (primeiraVersao.current) {
+      primeiraVersao.current = false
+      return
+    }
+
+    let ativo = true
+
+    ;(async () => {
+      try {
+        const ativa = await servico.obterSessaoAtiva()
+        const jogoDaSessao = ativa ? await servico.obterJogo(ativa.jogoId) : null
+        if (ativo) aplicarSessao(ativa, jogoDaSessao)
+      } catch {
+        // Mantém o estado atual; a próxima mudança tenta de novo.
+      }
+    })()
+
+    return () => {
+      ativo = false
+    }
+  }, [aplicarSessao, servico, versao])
 
   useEffect(() => {
     setAgora(new Date())

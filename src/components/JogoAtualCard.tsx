@@ -1,6 +1,7 @@
-import { BookOpen, ChevronDown, Clock } from 'lucide-react'
+import { BookOpen, ChevronDown, Clock, Pencil } from 'lucide-react'
 import { createPortal } from 'react-dom'
 import { useRef, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { useServicoSavePoint } from '../contexts/ServicoContext'
 import { SITUACOES_JOGO, type SituacaoJogo } from '../constantes'
 import type { Jogo } from '../data'
@@ -59,6 +60,14 @@ export function JogoAtualCard({
           <span className="jogo-atual-rotulo">JOGO ATUAL</span>
           <h2 className="jogo-atual-nome">{jogo.nome}</h2>
         </div>
+
+        <Link
+          className="jogo-atual-editar"
+          to={`/jogo/${jogo.id}/editar`}
+          aria-label={`Editar ${jogo.nome}`}
+        >
+          <Pencil size={16} strokeWidth={1.75} aria-hidden="true" />
+        </Link>
       </div>
 
       <div className="jogo-atual-info">

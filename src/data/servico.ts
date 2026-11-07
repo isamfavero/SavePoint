@@ -5,12 +5,15 @@ import {
   MS_POR_HORA,
 } from './calculos'
 import type { EstatisticasJogo } from './calculos'
+import { lerBackup, montarBackup } from './backup'
+import type { BackupSavePoint, ResumoImportacao } from './backup'
 import { normalizarTexto } from '../dominio/biblioteca'
 import { ErroSavePoint } from './erros'
 import type { RepositorioSavePoint } from './repositorio'
 import type {
   AtualizacaoJogo,
   AtualizacaoRegistro,
+  AtualizacaoSessao,
   DadosEncerramentoSessao,
   DadosJogo,
   DadosRegistro,
@@ -114,6 +117,7 @@ export class ServicoSavePoint {
     }
 
     await this.repositorio.criarJogo(jogo)
+    this.onChangeCallback()
     return jogo
   }
 
@@ -162,6 +166,7 @@ export class ServicoSavePoint {
     }
 
     await this.repositorio.atualizarJogo(atualizado)
+    this.onChangeCallback()
     return atualizado
   }
 
@@ -173,6 +178,17 @@ export class ServicoSavePoint {
     }
 
     await this.repositorio.excluirJogoComDependentes(id)
+    this.onChangeCallback()
+  }
+
+  /** Conta o que será apagado junto com o jogo, para a confirmação. */
+  async contarDependentesDoJogo(id: string): Promise<{ sessoes: number; registros: number }> {
+    const [sessoes, registros] = await Promise.all([
+      this.repositorio.listarSessoesPorJogo(id),
+      this.repositorio.listarRegistrosPorJogo(id),
+    ])
+
+    return { sessoes: sessoes.length, registros: registros.length }
   }
 
   async iniciarSessao(jogoId: string): Promise<Sessao> {
@@ -210,6 +226,7 @@ export class ServicoSavePoint {
     }
 
     await this.repositorio.criarSessao(sessao)
+    this.onChangeCallback()
     return sessao
   }
 
@@ -240,6 +257,7 @@ export class ServicoSavePoint {
     }
 
     await this.repositorio.atualizarSessao(atualizada)
+    this.onChangeCallback()
     return atualizada
   }
 
@@ -260,6 +278,7 @@ export class ServicoSavePoint {
     }
 
     await this.repositorio.atualizarSessao(atualizada)
+    this.onChangeCallback()
     return atualizada
   }
 
@@ -302,7 +321,130 @@ export class ServicoSavePoint {
     }
 
     await this.repositorio.atualizarSessao(atualizada)
+    this.onChangeCallback()
     return atualizada
+  }
+
+  async listarTodasSessoes(): Promise<Sessao[]> {
+    return this.repositorio.listarSessoes()
+  }
+
+  /**
+   * Edita uma sessão já criada: os três textos e os horários de início e fim.
+   * Informar `fim` numa sessão aberta a encerra nesse instante — é assim que
+   * se corrige uma sessão esquecida aberta. Uma sessão encerrada não volta a
+   * ficar aberta.
+   */
+  async atualizarSessao(id: string, dados: AtualizacaoSessao): Promise<Sessao> {
+    const sessao = await this.repositorio.obterSessao(id)
+
+    if (!sessao) {
+      throw new ErroSavePoint('SESSAO_NAO_ENCONTRADA', 'Sessão não encontrada.')
+    }
+
+    const agora = this.agora()
+    const inicio = dados.inicio ?? sessao.inicio
+
+    if (Number.isNaN(inicio.getTime())) {
+      throw new ErroSavePoint('DADOS_INVALIDOS', 'Informe um horário de início válido.')
+    }
+
+    if (inicio.getTime() > agora.getTime()) {
+      throw new ErroSavePoint('DADOS_INVALIDOS', 'O início da sessão não pode estar no futuro.')
+    }
+
+    const textos = {
+      oQueFiz: dados.oQueFiz !== undefined ? dados.oQueFiz.trim() : sessao.oQueFiz,
+      ondeParei: dados.ondeParei !== undefined ? dados.ondeParei.trim() : sessao.ondeParei,
+      proximoPasso:
+        dados.proximoPasso !== undefined ? dados.proximoPasso.trim() : sessao.proximoPasso,
+    }
+
+    let atualizada: Sessao
+
+    if (sessao.fim === null && !dados.fim) {
+      if (sessao.pausadoEm && inicio.getTime() > sessao.pausadoEm.getTime()) {
+        throw new ErroSavePoint(
+          'DADOS_INVALIDOS',
+          'O início não pode ser depois do momento em que a sessão foi pausada.',
+        )
+      }
+
+      atualizada = { ...sessao, ...textos, inicio }
+    } else {
+      if (sessao.fim !== null && dados.fim === null) {
+        throw new ErroSavePoint('DADOS_INVALIDOS', 'Uma sessão encerrada não pode ser reaberta.')
+      }
+
+      const fim = dados.fim ?? sessao.fim!
+
+      if (Number.isNaN(fim.getTime())) {
+        throw new ErroSavePoint('DADOS_INVALIDOS', 'Informe um horário de fim válido.')
+      }
+
+      if (fim.getTime() > agora.getTime()) {
+        throw new ErroSavePoint('DADOS_INVALIDOS', 'O fim da sessão não pode estar no futuro.')
+      }
+
+      if (fim.getTime() < inicio.getTime()) {
+        throw new ErroSavePoint(
+          'DADOS_INVALIDOS',
+          'O fim da sessão não pode ser anterior ao início.',
+        )
+      }
+
+      let tempoPausado = sessao.tempoPausado
+
+      // Encerrando uma sessão aberta e pausada: a pausa conta até o fim informado.
+      if (sessao.fim === null && sessao.pausadoEm && fim.getTime() > sessao.pausadoEm.getTime()) {
+        tempoPausado += fim.getTime() - sessao.pausadoEm.getTime()
+      }
+
+      // Com o intervalo encurtado, a pausa nunca pode passar da duração total.
+      tempoPausado = Math.min(tempoPausado, fim.getTime() - inicio.getTime())
+
+      atualizada = {
+        ...sessao,
+        ...textos,
+        inicio,
+        fim,
+        tempoPausado,
+        pausadoEm: null,
+      }
+    }
+
+    await this.repositorio.atualizarSessao(atualizada)
+    this.onChangeCallback()
+    return atualizada
+  }
+
+  /**
+   * Apaga a sessão e todas as anotações feitas nela. Objetivos criados em
+   * outra sessão e concluídos nesta continuam concluídos, sem a sessão.
+   */
+  async excluirSessao(id: string): Promise<void> {
+    const sessao = await this.repositorio.obterSessao(id)
+
+    if (!sessao) {
+      throw new ErroSavePoint('SESSAO_NAO_ENCONTRADA', 'Sessão não encontrada.')
+    }
+
+    const daSessao = await this.repositorio.listarRegistrosPorSessao(id)
+
+    for (const registro of daSessao) {
+      await this.repositorio.excluirRegistro(registro.id)
+    }
+
+    const doJogo = await this.repositorio.listarRegistrosPorJogo(sessao.jogoId)
+
+    for (const registro of doJogo) {
+      if (registro.concluidoSessaoId === id) {
+        await this.repositorio.atualizarRegistro({ ...registro, concluidoSessaoId: null })
+      }
+    }
+
+    await this.repositorio.excluirSessao(id)
+    this.onChangeCallback()
   }
 
   async criarRegistro(dados: DadosRegistro): Promise<Registro> {
@@ -592,6 +734,11 @@ export class ServicoSavePoint {
     }
   }
 
+  /**
+   * Busca anotações sem diferenciar maiúsculas nem acentos, da mais recente
+   * para a mais antiga. Texto vazio lista as mais recentes; "#tag" procura
+   * só nas tags.
+   */
   async buscarRegistros(
     texto: string,
     jogoId?: string,
@@ -599,17 +746,112 @@ export class ServicoSavePoint {
     limite = 30,
     deslocamento = 0,
   ): Promise<Registro[]> {
-    const normalizado = normalizarTexto(texto)
-
-    const filtros: any = {
-      texto: normalizado,
-      jogoId,
-      tipos,
+    return this.repositorio.buscarRegistros({
+      texto: normalizarTexto(texto),
+      jogoId: jogoId || undefined,
+      tipos: tipos && tipos.length > 0 ? tipos : undefined,
       limite,
       deslocamento,
+    })
+  }
+
+  /** Junta jogos, sessões, anotações e capas num objeto pronto para virar arquivo. */
+  async exportarDados(): Promise<BackupSavePoint> {
+    const [jogos, sessoes, registros] = await Promise.all([
+      this.repositorio.listarJogos(),
+      this.repositorio.listarSessoes(),
+      this.repositorio.listarRegistros(),
+    ])
+
+    return montarBackup(jogos, sessoes, registros, this.agora())
+  }
+
+  /**
+   * Acrescenta os dados de um backup sem apagar nem duplicar nada: itens com
+   * um id que já existe são ignorados. Mantém as regras do app — toda anotação
+   * precisa de uma sessão do mesmo jogo e só pode haver uma sessão ativa.
+   */
+  async importarDados(conteudo: unknown): Promise<ResumoImportacao> {
+    const backup = lerBackup(conteudo)
+
+    const [jogosLocais, sessoesLocais, registrosLocais] = await Promise.all([
+      this.repositorio.listarJogos(),
+      this.repositorio.listarSessoes(),
+      this.repositorio.listarRegistros(),
+    ])
+
+    const resumo: ResumoImportacao = {
+      jogos: 0,
+      sessoes: 0,
+      registros: 0,
+      ignorados: 0,
+      sessoesEncerradas: 0,
     }
 
-    return this.repositorio.buscarRegistros(filtros)
+    const jogos = new Set(jogosLocais.map((jogo) => jogo.id))
+    const sessoes = new Map(sessoesLocais.map((sessao) => [sessao.id, sessao.jogoId]))
+    const registros = new Set(registrosLocais.map((registro) => registro.id))
+    let haSessaoAtiva = sessoesLocais.some((sessao) => sessao.fim === null)
+
+    for (const jogo of backup.jogos) {
+      if (jogos.has(jogo.id)) {
+        resumo.ignorados++
+        continue
+      }
+
+      await this.repositorio.criarJogo(jogo)
+      jogos.add(jogo.id)
+      resumo.jogos++
+    }
+
+    for (const original of backup.sessoes) {
+      if (sessoes.has(original.id) || !jogos.has(original.jogoId)) {
+        resumo.ignorados++
+        continue
+      }
+
+      let sessao = original
+
+      if (sessao.fim === null) {
+        if (haSessaoAtiva) {
+          // Já existe uma sessão ativa: a importada fecha onde parou de contar.
+          const fim = sessao.pausadoEm ?? backup.exportadoEm
+          const fimValido = fim.getTime() < sessao.inicio.getTime() ? sessao.inicio : fim
+          sessao = { ...sessao, fim: fimValido, pausadoEm: null }
+          resumo.sessoesEncerradas++
+        } else {
+          haSessaoAtiva = true
+        }
+      }
+
+      await this.repositorio.criarSessao(sessao)
+      sessoes.set(sessao.id, sessao.jogoId)
+      resumo.sessoes++
+    }
+
+    for (const original of backup.registros) {
+      if (
+        registros.has(original.id) ||
+        !jogos.has(original.jogoId) ||
+        sessoes.get(original.sessaoId) !== original.jogoId
+      ) {
+        resumo.ignorados++
+        continue
+      }
+
+      const registro = { ...original }
+
+      if (registro.concluidoSessaoId && !sessoes.has(registro.concluidoSessaoId)) {
+        registro.concluidoSessaoId = null
+      }
+
+      await this.repositorio.criarRegistro(registro)
+      registros.add(registro.id)
+      resumo.registros++
+    }
+
+    this.onChangeCallback()
+    return resumo
   }
 
   async calcularTempoTotalAoVivo(jogoId: string): Promise<number> {

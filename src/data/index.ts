@@ -1,3 +1,4 @@
+export * from './backup'
 export * from './calculos'
 export * from './erros'
 export * from './repositorio'

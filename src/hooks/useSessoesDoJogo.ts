@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState } from 'react'
-import { useServicoSavePoint } from '../contexts/ServicoContext'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { useServicoSavePoint, useVersaoDados } from '../contexts/ServicoContext'
 import { useSessaoAtiva } from '../contexts/SessaoAtivaContext'
 import { calcularDuracaoSessao } from '../data'
 import type { EstatisticasJogo, Sessao } from '../data'
@@ -11,6 +11,8 @@ export function useSessoesDoJogo(jogoId: string | null) {
   const [estatisticas, setEstatisticas] = useState<EstatisticasJogo | null>(null)
   const [carregando, setCarregando] = useState(Boolean(jogoId))
   const [erro, setErro] = useState<string | null>(null)
+  const versao = useVersaoDados()
+  const jogoCarregado = useRef<string | null>(null)
 
   const marcadorSessao = sessao
     ? `${sessao.id}:${sessao.pausadoEm?.getTime() ?? 'ativa'}:${sessao.fim?.getTime() ?? 'aberta'}`
@@ -30,7 +32,7 @@ export function useSessoesDoJogo(jogoId: string | null) {
       }
     }
 
-    setCarregando(true)
+    if (jogoCarregado.current !== jogoId) setCarregando(true)
     setErro(null)
 
     Promise.all([
@@ -40,6 +42,7 @@ export function useSessoesDoJogo(jogoId: string | null) {
       .then(([lista, resumo]) => {
         if (!ativo) return
 
+        jogoCarregado.current = jogoId
         setSessoes(lista)
         setEstatisticas(resumo)
       })
@@ -53,7 +56,7 @@ export function useSessoesDoJogo(jogoId: string | null) {
     return () => {
       ativo = false
     }
-  }, [jogoId, marcadorSessao, servico])
+  }, [jogoId, marcadorSessao, servico, versao])
 
   const tempoTotalMs = useMemo(
     () => sessoes.reduce((total, item) => total + calcularDuracaoSessao(item, agora), 0),

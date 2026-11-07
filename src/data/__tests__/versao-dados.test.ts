@@ -23,6 +23,8 @@ describe('contador de versão e atualização em tempo real', () => {
 
     const jogo = await criarJogo(servico)
     const sessao = await servico.iniciarSessao(jogo.id)
+    // Criar jogo e iniciar sessão também notificam; o teste conta a partir daqui.
+    mudancas = 0
 
     // Verificar que a sessão está ativa
     const sessoes = await servico.listarSessoesDoJogo(jogo.id)
@@ -73,6 +75,8 @@ describe('contador de versão e atualização em tempo real', () => {
 
     const jogo = await criarJogo(servico)
     const sessao = await servico.iniciarSessao(jogo.id)
+    // Criar jogo e iniciar sessão também notificam; o teste conta a partir daqui.
+    mudancas = 0
 
     const registro = await servico.criarRegistro({
       jogoId: jogo.id,
@@ -102,6 +106,8 @@ describe('contador de versão e atualização em tempo real', () => {
 
     const jogo = await criarJogo(servico)
     const sessao = await servico.iniciarSessao(jogo.id)
+    // Criar jogo e iniciar sessão também notificam; o teste conta a partir daqui.
+    mudancas = 0
 
     const registro = await servico.criarRegistro({
       jogoId: jogo.id,
@@ -140,6 +146,8 @@ describe('contador de versão e atualização em tempo real', () => {
 
     const jogo = await criarJogo(servico)
     const sessao = await servico.iniciarSessao(jogo.id)
+    // Criar jogo e iniciar sessão também notificam; o teste conta a partir daqui.
+    mudancas = 0
 
     const registro = await servico.criarRegistro({
       jogoId: jogo.id,
@@ -156,5 +164,32 @@ describe('contador de versão e atualização em tempo real', () => {
 
     const excluido = await servico.obterRegistro(registro.id)
     expect(excluido).toBeNull()
+  })
+
+  it('mudanças em jogos e sessões também disparam o contador', async () => {
+    const repositorio = new RepositorioMemoria()
+    let mudancas = 0
+    const servico = new ServicoSavePoint(repositorio, {
+      onChange: () => {
+        mudancas++
+      },
+    })
+
+    const jogo = await criarJogo(servico)
+    expect(mudancas).toBe(1)
+
+    await servico.atualizarJogo(jogo.id, { nome: 'Outro nome' })
+    expect(mudancas).toBe(2)
+
+    const sessao = await servico.iniciarSessao(jogo.id)
+    await servico.pausarSessao(sessao.id)
+    await servico.retomarSessao(sessao.id)
+    await servico.encerrarSessao(sessao.id)
+    expect(mudancas).toBe(6)
+
+    await servico.atualizarSessao(sessao.id, { oQueFiz: 'Corrigido' })
+    await servico.excluirSessao(sessao.id)
+    await servico.excluirJogo(jogo.id)
+    expect(mudancas).toBe(9)
   })
 })

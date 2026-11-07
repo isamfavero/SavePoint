@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react'
-import { useServicoSavePoint } from '../contexts/ServicoContext'
+import { useEffect, useRef, useState } from 'react'
+import { useServicoSavePoint, useVersaoDados } from '../contexts/ServicoContext'
 import type { EstatisticasJogo, Jogo } from '../data'
 
 export type JogoComEstatisticas = {
@@ -12,11 +12,13 @@ export function useBiblioteca() {
   const [itens, setItens] = useState<JogoComEstatisticas[]>([])
   const [carregando, setCarregando] = useState(true)
   const [erro, setErro] = useState<string | null>(null)
+  const versao = useVersaoDados()
+  const jaCarregou = useRef(false)
 
   useEffect(() => {
     let ativo = true
 
-    setCarregando(true)
+    if (!jaCarregou.current) setCarregando(true)
     setErro(null)
 
     servico
@@ -35,6 +37,7 @@ export function useBiblioteca() {
           (a, b) => b.jogo.atualizadoEm.getTime() - a.jogo.atualizadoEm.getTime(),
         )
 
+        jaCarregou.current = true
         setItens(comEstatisticas)
       })
       .catch(() => {
@@ -47,7 +50,7 @@ export function useBiblioteca() {
     return () => {
       ativo = false
     }
-  }, [servico])
+  }, [servico, versao])
 
   return { itens, carregando, erro }
 }

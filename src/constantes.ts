@@ -10,7 +10,7 @@ export type SituacaoJogo = (typeof SITUACOES_JOGO)[number]
 export const TIPOS_REGISTRO = [
   'Diário',
   'Senhas',
-  'Manuscritos',
+  'Documentos',
   'Puzzles',
   'Lembretes',
   'Marco',
@@ -19,4 +19,9 @@ export const TIPOS_REGISTRO = [
 ] as const
 
 export type TipoRegistro = (typeof TIPOS_REGISTRO)[number]
+
+/** Nomes antigos de tipos, convertidos ao abrir o banco e ao importar backups. */
+export const TIPOS_RENOMEADOS: Record<string, TipoRegistro> = {
+  Manuscritos: 'Documentos',
+}
 

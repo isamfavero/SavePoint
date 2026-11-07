@@ -1,14 +1,17 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useJogoAtual } from '../contexts/JogoAtualContext'
-import { useServicoSavePoint } from '../contexts/ServicoContext'
+import { useServicoSavePoint, useVersaoDados } from '../contexts/ServicoContext'
 import type { Jogo } from '../data'
 
 export function useJogoAtualDetalhe() {
   const { jogoAtualId, limparJogoAtual } = useJogoAtual()
   const servico = useServicoSavePoint()
+  const versao = useVersaoDados()
   const [jogo, setJogo] = useState<Jogo | null>(null)
   const [carregando, setCarregando] = useState(Boolean(jogoAtualId))
   const [erro, setErro] = useState<string | null>(null)
+  // Só mostra "carregando" ao trocar de jogo; mudanças nos dados recarregam em silêncio.
+  const idCarregado = useRef<string | null>(null)
 
   useEffect(() => {
     let ativo = true
@@ -22,13 +25,15 @@ export function useJogoAtualDetalhe() {
       }
     }
 
-    setCarregando(true)
+    if (idCarregado.current !== jogoAtualId) setCarregando(true)
     setErro(null)
 
     servico
       .obterJogo(jogoAtualId)
       .then((encontrado) => {
         if (!ativo) return
+
+        idCarregado.current = jogoAtualId
 
         if (!encontrado) {
           limparJogoAtual()
@@ -48,7 +53,7 @@ export function useJogoAtualDetalhe() {
     return () => {
       ativo = false
     }
-  }, [jogoAtualId, limparJogoAtual, servico])
+  }, [jogoAtualId, limparJogoAtual, servico, versao])
 
   return { jogo, carregando, erro }
 }
