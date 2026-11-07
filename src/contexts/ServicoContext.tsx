@@ -2,10 +2,21 @@ import { createContext, useContext, useEffect, useState, type ReactNode } from '
 import { RepositorioIndexedDb, ServicoSavePoint } from '../data'
 import { ErroInicial } from '../components/ErrorBoundary'
 
-const ServicoContext = createContext<ServicoSavePoint | null>(null)
+const ServicoContext = createContext<{
+  servico: ServicoSavePoint
+  versao: number
+  invalidar: () => void
+} | null>(null)
 
 export function ServicoProvider({ children }: { children: ReactNode }) {
-  const [servico] = useState(() => new ServicoSavePoint(new RepositorioIndexedDb()))
+  const [versao, setVersao] = useState(0)
+
+  const servico = useState(() => new ServicoSavePoint(new RepositorioIndexedDb()))[0]
+
+  useEffect(() => {
+    servico.setOnChange(() => setVersao((v) => v + 1))
+  }, [servico])
+
   const [erroInicial, setErroInicial] = useState<Error | null>(null)
   const [tentativa, setTentativa] = useState(0)
 
@@ -38,7 +49,9 @@ export function ServicoProvider({ children }: { children: ReactNode }) {
   }
 
   return (
-    <ServicoContext.Provider value={servico}>{children}</ServicoContext.Provider>
+    <ServicoContext.Provider value={{ servico, versao, invalidar: () => setVersao((v) => v + 1) }}>
+      {children}
+    </ServicoContext.Provider>
   )
 }
 
@@ -49,5 +62,15 @@ export function useServicoSavePoint(): ServicoSavePoint {
     throw new Error('useServicoSavePoint precisa estar dentro de ServicoProvider.')
   }
 
-  return contexto
+  return contexto.servico
+}
+
+export function useVersaoDados(): number {
+  const contexto = useContext(ServicoContext)
+
+  if (!contexto) {
+    throw new Error('useVersaoDados precisa estar dentro de ServicoProvider.')
+  }
+
+  return contexto.versao
 }

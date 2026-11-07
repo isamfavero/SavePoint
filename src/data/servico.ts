@@ -22,6 +22,7 @@ import type {
 type OpcoesServico = {
   idFactory?: () => string
   agora?: () => Date
+  onChange?: () => void
 }
 
 function normalizarGeneros(generos: string[]): string[] {
@@ -70,11 +71,17 @@ export class ServicoSavePoint {
   private readonly repositorio: RepositorioSavePoint
   private readonly gerarId: () => string
   private readonly agora: () => Date
+  private onChangeCallback: () => void
 
   constructor(repositorio: RepositorioSavePoint, opcoes: OpcoesServico = {}) {
     this.repositorio = repositorio
     this.gerarId = opcoes.idFactory ?? (() => crypto.randomUUID())
     this.agora = opcoes.agora ?? (() => new Date())
+    this.onChangeCallback = opcoes.onChange ?? (() => {})
+  }
+
+  setOnChange(callback: () => void) {
+    this.onChangeCallback = callback
   }
 
   async criarJogo(dados: DadosJogo): Promise<Jogo> {
@@ -325,6 +332,7 @@ export class ServicoSavePoint {
     }
 
     await this.repositorio.criarRegistro(registro)
+    this.onChangeCallback()
     return registro
   }
 
@@ -433,6 +441,7 @@ export class ServicoSavePoint {
     }
 
     await this.repositorio.atualizarRegistro(registro)
+    this.onChangeCallback()
     return registro
   }
 
@@ -524,6 +533,7 @@ export class ServicoSavePoint {
     }
 
     await this.repositorio.excluirRegistro(id)
+    this.onChangeCallback()
   }
 
   async calcularEstatisticasJogo(jogoId: string): Promise<EstatisticasJogo> {

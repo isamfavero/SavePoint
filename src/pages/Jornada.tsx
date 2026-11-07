@@ -5,7 +5,7 @@ import {
   Play,
 } from 'lucide-react'
 import { useEffect, useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { CabecalhoMarca } from '../components/CabecalhoMarca'
 import { Cronometro } from '../components/Cronometro'
 import { EstatisticasJogo } from '../components/EstatisticasJogo'
@@ -15,7 +15,7 @@ import { ObjetivosLista } from '../components/ObjetivosLista'
 import { Tabs } from '../components/Tabs'
 import { TrilhaCronologica } from '../components/TrilhaCronologica'
 import { useSessaoAtiva } from '../contexts/SessaoAtivaContext'
-import { useServicoSavePoint } from '../contexts/ServicoContext'
+import { useServicoSavePoint, useVersaoDados } from '../contexts/ServicoContext'
 import {
   formatarData,
   formatarHoras,
@@ -58,6 +58,8 @@ export function Jornada() {
     sessoes,
   } = useSessoesDoJogo(jogo?.id ?? null)
   const navigate = useNavigate()
+  const location = useLocation()
+  const versao = useVersaoDados()
   const [acaoEmAndamento, setAcaoEmAndamento] = useState<AcaoEmAndamento>(null)
   const [erroAcao, setErroAcao] = useState<string | null>(null)
   const [registros, setRegistros] = useState<Registro[]>([])
@@ -96,6 +98,19 @@ export function Jornada() {
   const objetivos = registros.filter(
     (registro) => registro.tipo === 'Objetivo',
   )
+
+  const registrosSessaoAtiva =
+    registrosPorSessao[sessaoDoJogoAtual?.id ?? ''] ?? []
+  const totalAnotacoesAtiva = registrosSessaoAtiva.length
+  const marcosAtivos = registrosSessaoAtiva.filter(
+    (r) => r.tipo === 'Marco',
+  ).length
+  const regioesAtivas = registrosSessaoAtiva.filter(
+    (r) => r.tipo === 'Região mapeada',
+  ).length
+  const objetivosConcluidosAtivos = registrosSessaoAtiva.filter(
+    (r) => r.tipo === 'Objetivo' && r.concluido,
+  ).length
 
   const sessaoAtivaResumo =
     sessaoDoJogoAtual
@@ -139,7 +154,7 @@ export function Jornada() {
           setUltimosResumos(resumos)
           setTotalSessoesEncerradas(sessoesEncerradasDoHook.length)
         })
-  }, [jogo?.id, servico])
+  }, [jogo?.id, servico, versao, location.pathname])
 
   async function aoIniciarSessao() {
     if (!jogo) return
@@ -308,7 +323,7 @@ export function Jornada() {
 
           {aba === 'diario' && (
             <div className="jornada-diario">
-              {totalSessoesEncerradas === 0 && (
+              {totalSessoesEncerradas === 0 && !sessaoDoJogoAtual && (
                 <div className="estado-vazio diario-vazio">
                   <span className="estado-vazio-icone" aria-hidden="true">
                     <BookOpen size={32} strokeWidth={1.75} />
@@ -321,6 +336,61 @@ export function Jornada() {
                 </div>
               )}
               <div className="sessoes-lista">
+                {sessaoDoJogoAtual && (
+                  <>
+                    <div
+                      key={`ativa-${sessaoDoJogoAtual.id}`}
+                      className="card-sessao card-sessao-ativa"
+                      role="button"
+                      tabIndex={0}
+                      onClick={() =>
+                        navigate(`/jornada/sessao/${sessaoDoJogoAtual.id}/notas`)
+                      }
+                    >
+                      <div className="card-cabecalho">
+                        <span className="card-numero">
+                          Sessão {sessaoDoJogoAtual.numero}
+                        </span>
+                        <span className="card-data">em andamento</span>
+                      </div>
+                      <div className="card-meta">
+                        <span className="card-anotacoes">
+                          {totalAnotacoesAtiva} anota{'cao'}{totalAnotacoesAtiva !== 1 ? 's' : ''}
+                        </span>
+                        <span className="card-selos">
+                          {marcosAtivos > 0 && (
+                            <span className="selo">
+                              {marcosAtivos} Marco{marcosAtivos !== 1 ? 's' : ''}
+                            </span>
+                          )}
+                          {regioesAtivas > 0 && (
+                            <span className="selo">
+                              {regioesAtivas} Região{regioesAtivas !== 1 ? 's' : ''} mapeada
+                            </span>
+                          )}
+                          {objetivosConcluidosAtivos > 0 && (
+                            <span className="selo">
+                              {objetivosConcluidosAtivos} Objetivo{
+                                objetivosConcluidosAtivos !== 1 ? 's' : ''
+                              } concluido
+                            </span>
+                          )}
+                        </span>
+                      </div>
+                      <div className="card-tags">
+                        <button
+                          className="botao-mini botao-terciario"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            navigate(`/jornada/sessao/${sessaoDoJogoAtual.id}/notas`)
+                          }}
+                        >
+                          Abrir notas
+                        </button>
+                      </div>
+                    </div>
+                  </>
+                )}
                 {ultimosResumos.map((resumo, index) => {
                   // Obter a sessão do índice
                   const sessaoInfo = sessoesEncerradas[index] || null
