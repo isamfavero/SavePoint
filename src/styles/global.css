@@ -657,7 +657,7 @@ textarea {
 .jogo-card-capa {
   position: relative;
   display: block;
-  aspect-ratio: 1 / 1;
+  aspect-ratio: 3 / 4;
   overflow: hidden;
   background: var(--color-bg-deep);
 }
@@ -1064,9 +1064,13 @@ textarea {
   color: var(--color-accent);
 }
 
+/* Prévia na proporção 3x4 em que a capa aparece nos cartões. */
 .capa-preview {
   position: relative;
   overflow: hidden;
+  width: min(100%, 210px);
+  aspect-ratio: 3 / 4;
+  margin: 0 auto;
   border: 1px solid var(--color-border);
   border-radius: 18px;
   background: var(--color-bg-deep);
@@ -1075,7 +1079,7 @@ textarea {
 .capa-preview img {
   display: block;
   width: 100%;
-  height: 210px;
+  height: 100%;
   object-fit: cover;
 }
 
@@ -1394,24 +1398,26 @@ textarea {
   gap: 14px;
 }
 
+/* Capa em 3x4, a mesma proporção em que a foto é recortada ao adicionar o jogo. */
 .jogo-atual-capa {
+  position: relative;
   flex: 0 0 auto;
-  align-self: stretch;
-  aspect-ratio: 1 / 1;
-  min-width: 48px;
-  max-width: 64px;
+  width: 60px;
+  aspect-ratio: 3 / 4;
   border-radius: 14px;
   overflow: hidden;
   background: #0c0e16;
-  display: grid;
-  place-items: center;
 }
 
-.jogo-atual-capa img {
+/* A imagem preenche o quadro por inteiro: sem faixa preta sobrando em cima. */
+.jogo-atual-capa img,
+.jogo-atual-capa .jogo-capa-vazia {
+  position: absolute;
+  inset: 0;
+  display: block;
   width: 100%;
   height: 100%;
   object-fit: cover;
-  display: block;
 }
 
 .jogo-atual-titulo {
@@ -4455,3 +4461,154 @@ textarea {
   }
 }
 
+
+/* ---------- Recortar capa (3x4) ---------- */
+
+.recorte-fundo {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  overflow-y: auto;
+  background: var(--color-bg);
+}
+
+.recorte {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  width: 100%;
+  max-width: var(--app-width);
+  min-height: 100%;
+  margin: 0 auto;
+  padding: 24px 20px calc(24px + env(safe-area-inset-bottom));
+}
+
+.recorte-topo {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  align-self: stretch;
+}
+
+.recorte-topo h2 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 1.4rem;
+  font-weight: 600;
+  letter-spacing: -0.03em;
+}
+
+.recorte-dica {
+  align-self: stretch;
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: 0.85rem;
+  line-height: 1.5;
+}
+
+.recorte-quadro {
+  position: relative;
+  flex: 0 0 auto;
+  overflow: hidden;
+  border: 1px solid var(--color-border);
+  border-radius: 14px;
+  background: var(--color-bg-deep);
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+}
+
+.recorte-quadro:active {
+  cursor: grabbing;
+}
+
+.recorte-imagem {
+  position: absolute;
+  max-width: none;
+  pointer-events: none;
+}
+
+.recorte-carregando {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  margin: 0;
+  place-items: center;
+  color: var(--color-text-muted);
+  font-size: 0.85rem;
+}
+
+/* Guias de terços sobre a foto, para facilitar o enquadramento. */
+.recorte-guia {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(to right, transparent calc(33.33% - 0.5px), rgba(255, 255, 255, 0.28) calc(33.33% - 0.5px) calc(33.33% + 0.5px), transparent calc(33.33% + 0.5px)),
+    linear-gradient(to right, transparent calc(66.66% - 0.5px), rgba(255, 255, 255, 0.28) calc(66.66% - 0.5px) calc(66.66% + 0.5px), transparent calc(66.66% + 0.5px)),
+    linear-gradient(to bottom, transparent calc(33.33% - 0.5px), rgba(255, 255, 255, 0.28) calc(33.33% - 0.5px) calc(33.33% + 0.5px), transparent calc(33.33% + 0.5px)),
+    linear-gradient(to bottom, transparent calc(66.66% - 0.5px), rgba(255, 255, 255, 0.28) calc(66.66% - 0.5px) calc(66.66% + 0.5px), transparent calc(66.66% + 0.5px));
+}
+
+.recorte-quadro:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 3px;
+}
+
+.recorte-zoom {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  max-width: 280px;
+}
+
+.recorte-zoom input[type='range'] {
+  flex: 1;
+  min-width: 0;
+  accent-color: var(--color-accent);
+}
+
+.recorte-zoom-botao {
+  display: grid;
+  flex: 0 0 auto;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border: 1px solid var(--color-border);
+  border-radius: 50%;
+  background: var(--color-surface);
+  color: var(--color-text);
+  cursor: pointer;
+}
+
+.recorte-acoes {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  align-self: stretch;
+  margin-top: auto;
+}
+
+.recorte-acoes .botao-primario {
+  width: 100%;
+  border-radius: 14px;
+  padding: 16px 20px;
+}
+
+.capa-editor {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.capa-acoes {
+  display: flex;
+  gap: 8px;
+}
+
+.capa-acoes .botao-mini {
+  background: var(--color-surface);
+}

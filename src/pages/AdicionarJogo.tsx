@@ -18,7 +18,8 @@ import { useJogoAtual } from '../contexts/JogoAtualContext'
 import { useServicoSavePoint } from '../contexts/ServicoContext'
 import type { Jogo, SituacaoJogo } from '../data'
 import { existeJogoDuplicado } from '../dominio/biblioteca'
-import { reduzirImagemParaBlob } from '../dominio/imagem'
+import { LARGURA_MAXIMA_ORIGINAL, reduzirImagemParaBlob } from '../dominio/imagem'
+import { RecortarCapa } from '../components/RecortarCapa'
 import { useObjectUrl } from '../hooks/useObjectUrl'
 
 const PLATAFORMAS = [
@@ -65,6 +66,8 @@ export function AdicionarJogo() {
   const [capa, setCapa] = useState<Blob | null>(null)
   const [erroCapa, setErroCapa] = useState<string | null>(null)
   const [processandoCapa, setProcessandoCapa] = useState(false)
+  // A foto que está sendo enquadrada na tela de recorte (nova ou a capa atual).
+  const [paraRecortar, setParaRecortar] = useState<Blob | null>(null)
   const [nome, setNome] = useState(() => params.get('nome')?.trim() ?? '')
   const [plataforma, setPlataforma] = useState<string | null>(null)
   const [generos, setGeneros] = useState<string[]>([])
@@ -190,13 +193,18 @@ export function AdicionarJogo() {
     setProcessandoCapa(true)
 
     try {
-      const reduzida = await reduzirImagemParaBlob(arquivo)
-      setCapa(reduzida)
+      // Reduz só o necessário para a tela de recorte; o recorte final sai em 3x4.
+      setParaRecortar(await reduzirImagemParaBlob(arquivo, LARGURA_MAXIMA_ORIGINAL))
     } catch {
       setErroCapa('Não foi possível usar essa imagem')
     } finally {
       setProcessandoCapa(false)
     }
+  }
+
+  function aoConfirmarRecorte(recortada: Blob) {
+    setCapa(recortada)
+    setParaRecortar(null)
   }
 
   function alternarGenero(genero: string) {
@@ -361,15 +369,24 @@ export function AdicionarJogo() {
             />
 
             {urlCapa ? (
-              <div className="capa-preview">
-                <img src={urlCapa} alt="Prévia da capa escolhida" />
-                <div className="capa-preview-acoes">
+              <div className="capa-editor">
+                <div className="capa-preview">
+                  <img src={urlCapa} alt="Prévia da capa escolhida" />
+                </div>
+                <div className="capa-acoes">
                   <button
                     type="button"
                     className="botao-mini"
                     onClick={abrirSeletorDeArquivo}
                   >
                     Trocar
+                  </button>
+                  <button
+                    type="button"
+                    className="botao-mini"
+                    onClick={() => capa && setParaRecortar(capa)}
+                  >
+                    Ajustar
                   </button>
                   <button
                     type="button"
@@ -611,6 +628,14 @@ export function AdicionarJogo() {
             </div>
           </div>
         </div>
+      )}
+
+      {paraRecortar && (
+        <RecortarCapa
+          origem={paraRecortar}
+          aoConfirmar={aoConfirmarRecorte}
+          aoCancelar={() => setParaRecortar(null)}
+        />
       )}
 
       {confirmarDuplicado && (
