@@ -329,6 +329,10 @@ export class ServicoSavePoint {
     return this.repositorio.listarSessoes()
   }
 
+  async listarTodosRegistros(): Promise<Registro[]> {
+    return this.repositorio.listarRegistros()
+  }
+
   /**
    * Edita uma sessão já criada: os três textos e os horários de início e fim.
    * Informar `fim` numa sessão aberta a encerra nesse instante — é assim que

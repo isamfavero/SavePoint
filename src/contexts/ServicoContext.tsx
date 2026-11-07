@@ -1,6 +1,8 @@
-import { createContext, useContext, useEffect, useState, type ReactNode } from 'react'
-import { RepositorioIndexedDb, ServicoSavePoint } from '../data'
+import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react'
+import { RepositorioIndexedDb, RepositorioSupabase, ServicoSavePoint } from '../data'
 import { ErroInicial } from '../components/ErrorBoundary'
+import { clienteSupabase } from '../conta/servico'
+import { useContaOpcional } from './ContaContext'
 
 const ServicoContext = createContext<{
   servico: ServicoSavePoint
@@ -11,7 +13,19 @@ const ServicoContext = createContext<{
 export function ServicoProvider({ children }: { children: ReactNode }) {
   const [versao, setVersao] = useState(0)
 
-  const servico = useState(() => new ServicoSavePoint(new RepositorioIndexedDb()))[0]
+  // Com a conta conectada, os dados vivem no Supabase, ligados ao usuário. Sem conta
+  // (ou sem Supabase configurado), ficam no navegador, como antes.
+  const usuarioId = useContaOpcional()?.usuario?.id ?? null
+
+  const servico = useMemo(
+    () =>
+      new ServicoSavePoint(
+        clienteSupabase && usuarioId
+          ? new RepositorioSupabase(clienteSupabase, usuarioId)
+          : new RepositorioIndexedDb(),
+      ),
+    [usuarioId],
+  )
 
   useEffect(() => {
     servico.setOnChange(() => setVersao((v) => v + 1))

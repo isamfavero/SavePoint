@@ -3524,6 +3524,20 @@ textarea {
   background: currentColor;
 }
 
+.cartao-envio-local {
+  margin: 0 0 20px;
+}
+
+.cartao-envio-local p {
+  margin: 0 0 12px;
+}
+
+.cartao-envio-acoes {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
 .marca-avatar {
   border-color: rgba(242, 184, 75, 0.45);
   background: rgba(242, 184, 75, 0.12);

@@ -11,6 +11,7 @@ import {
 import { useRef, useState } from 'react'
 import type { ChangeEvent } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import { CartaoEnvioLocal } from '../components/CartaoEnvioLocal'
 import { useConta } from '../contexts/ContaContext'
 import { useServicoSavePoint } from '../contexts/ServicoContext'
 import { nomeArquivoBackup } from '../data'
@@ -168,9 +169,10 @@ export function Ajustes() {
             </span>
           </div>
           <p className="ajustes-nota">
-            A conta já está ativa. Levar seus jogos e anotações para a nuvem é o próximo
-            passo; por enquanto eles continuam salvos neste aparelho.
+            Com a conta conectada, seus jogos, sessões, anotações e capas ficam guardados na
+            nuvem, ligados ao seu e-mail, e aparecem em qualquer aparelho.
           </p>
+          <CartaoEnvioLocal />
           <button
             type="button"
             className="ajustes-item"

@@ -12,6 +12,7 @@ import {
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { CabecalhoMarca } from '../components/CabecalhoMarca'
+import { CartaoEnvioLocal } from '../components/CartaoEnvioLocal'
 import { JogoCapa } from '../components/JogoCapa'
 import { useAviso } from '../contexts/AvisoContext'
 import { useJogoAtual } from '../contexts/JogoAtualContext'
@@ -124,6 +125,8 @@ export function Biblioteca() {
         BOM TE VER!
       </p>
       <h1 className="biblioteca-titulo">O que vamos jogar hoje?</h1>
+
+      <CartaoEnvioLocal compacto />
 
       {carregando && <p className="biblioteca-aviso">Carregando sua biblioteca...</p>}
 

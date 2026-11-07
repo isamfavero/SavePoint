@@ -59,6 +59,11 @@ export function ContaProvider({
   return <ContaContext.Provider value={valor}>{children}</ContaContext.Provider>
 }
 
+/** Como `useConta`, mas devolve null fora do provider (telas e testes isolados). */
+export function useContaOpcional(): ContaContextValue | null {
+  return useContext(ContaContext)
+}
+
 export function useConta(): ContaContextValue {
   const contexto = useContext(ContaContext)
 
