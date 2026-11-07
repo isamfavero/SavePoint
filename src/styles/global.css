@@ -2922,20 +2922,14 @@ textarea {
 }
 
 .objetivos-cabecalho {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
   margin-bottom: 16px;
-  flex-wrap: wrap;
 }
 
-.objetivos-cabecalho-esquerda {
+.objetivos-cabecalho-linha1 {
   display: flex;
   align-items: center;
   gap: 8px;
-  flex: 1;
-  min-width: 0;
+  width: 100%;
 }
 
 .objetivos-cabecalho-icone {
@@ -2957,16 +2951,16 @@ textarea {
   letter-spacing: 0.16em;
   line-height: 1;
   text-transform: uppercase;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  flex: 1;
+  min-width: 0;
 }
 
-.objetivos-cabecalho-direita {
+.objetivos-cabecalho-linha2 {
   display: flex;
   align-items: center;
+  justify-content: flex-end;
   gap: 10px;
-  flex-shrink: 0;
+  width: 100%;
 }
 
 .objetivos-contador {
@@ -2979,6 +2973,30 @@ textarea {
   letter-spacing: 0.08em;
   line-height: 1;
   white-space: nowrap;
+}
+
+.objetivos-botao-adicionar {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--color-border);
+  border-radius: 50%;
+  background: var(--color-surface);
+  color: var(--color-accent);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.objetivos-botao-adicionar:hover {
+  border-color: var(--color-accent);
+}
+
+.objetivos-novo-campo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
 }
 
 .objetivos-input-novo {
@@ -3001,26 +3019,40 @@ textarea {
   outline: none;
 }
 
-.objetivos-botao-adicionar {
+.objetivos-botao-confirmar,
+.objetivos-botao-cancelar {
   display: grid;
   place-items: center;
   width: 32px;
   height: 32px;
-  border: 1px solid var(--color-border);
-  border-radius: 50%;
-  background: var(--color-surface);
-  color: var(--color-accent);
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--color-text);
   cursor: pointer;
   flex-shrink: 0;
 }
 
-.objetivos-botao-adicionar:hover {
-  border-color: var(--color-accent);
+.objetivos-botao-confirmar {
+  color: var(--color-accent);
 }
 
-.objetivos-botao-adicionar:disabled {
-  opacity: 0.6;
+.objetivos-botao-confirmar:hover {
+  background: rgba(242, 184, 75, 0.1);
+}
+
+.objetivos-botao-confirmar:disabled {
+  opacity: 0.5;
   cursor: not-allowed;
+}
+
+.objetivos-botao-cancelar {
+  color: var(--color-text-muted);
+}
+
+.objetivos-botao-cancelar:hover {
+  color: var(--color-text);
+  background: rgba(225, 225, 237, 0.1);
 }
 
 .objetivos-lista {

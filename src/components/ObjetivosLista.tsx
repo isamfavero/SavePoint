@@ -1,4 +1,4 @@
-import { Check, Plus } from 'lucide-react'
+import { Check, Plus, X } from 'lucide-react'
 import { useState } from 'react'
 import { useServicoSavePoint } from '../contexts/ServicoContext'
 import { useSessaoAtiva } from '../contexts/SessaoAtivaContext'
@@ -20,10 +20,11 @@ export function ObjetivosLista({
   const servico = useServicoSavePoint()
   const { sessao } = useSessaoAtiva()
   const [modalAberto, setModalAberto] = useState(false)
-  const [textoNovo, setTextoNovo] = useState('')
   const [iniciando, setIniciando] = useState(false)
   const [erro, setErro] = useState<string | null>(null)
   const [salvandoId, setSalvandoId] = useState<string | null>(null)
+  const [novoObjetivoAberto, setNovoObjetivoAberto] = useState(false)
+  const [textoNovo, setTextoNovo] = useState('')
 
   const aberta = sessaoAtiva?.id ?? null
 
@@ -53,7 +54,7 @@ export function ObjetivosLista({
     }
   }
 
-  async function aoAdicionarObjetivo() {
+  async function aoCriarObjetivo() {
     if (!sessao) {
       setModalAberto(true)
       return
@@ -63,10 +64,7 @@ export function ObjetivosLista({
     setErro(null)
 
     try {
-      if (!textoNovo.trim()) {
-        setErro('Informe o objetivo.')
-        return
-      }
+      if (!textoNovo.trim()) return
 
       await servico.criarRegistro({
         jogoId,
@@ -76,11 +74,27 @@ export function ObjetivosLista({
       })
 
       setTextoNovo('')
+      setNovoObjetivoAberto(false)
     } catch {
       setErro('Não foi possível criar o objetivo.')
     } finally {
       setIniciando(false)
     }
+  }
+
+  function aoCancelarNovoObjetivo() {
+    setTextoNovo('')
+    setNovoObjetivoAberto(false)
+    setErro(null)
+  }
+
+  function aoAdicionarObjetivo() {
+    if (!sessao) {
+      setModalAberto(true)
+      return
+    }
+
+    setNovoObjetivoAberto(true)
   }
 
   function fecharModal() {
@@ -90,58 +104,73 @@ export function ObjetivosLista({
   return (
     <section className="objetivos" aria-label="Objetivos">
       <div className="objetivos-cabecalho">
-        <div className="objetivos-cabecalho-esquerda">
+        <div className="objetivos-cabecalho-linha1">
           <span className="objetivos-cabecalho-icone" aria-hidden="true">
             <Check size={20} strokeWidth={2} />
           </span>
-          <span className="objetivos-cabecalho-titulo">
-            OBJETIVOS EM ABERTO
-          </span>
+          <span className="objetivos-cabecalho-titulo">OBJETIVOS EM ABERTO</span>
         </div>
-        <div className="objetivos-cabecalho-direita">
+        <div className="objetivos-cabecalho-linha2">
           {concluidos.length > 0 && (
             <span className="objetivos-contador">
-              {concluidos.length} Concluído
+              {concluidos.length} Concluído{concluidos.length !== 1 ? 's' : ''}
             </span>
           )}
-          {aberta ? (
-            <>
-              <input
-                type="text"
-                className="objetivos-input-novo"
-                value={textoNovo}
-                onChange={(evento) => {
-                  setTextoNovo(evento.target.value)
-                  if (erro) setErro(null)
-                }}
-                placeholder="Novo objetivo"
-                aria-label="Novo objetivo"
-              />
-              <button
-                type="button"
-                className="objetivos-botao-adicionar"
-                onClick={aoAdicionarObjetivo}
-                disabled={iniciando}
-                aria-label="Adicionar objetivo"
-              >
-                {iniciando ? 'Criando...' : <Plus size={16} strokeWidth={2} aria-hidden="true" />}
-              </button>
-            </>
-          ) : (
-            <button
-              type="button"
-              className="objetivos-botao-adicionar"
-              onClick={() => setModalAberto(true)}
-              aria-label="Adicionar objetivo"
-            >
-              <Plus size={16} strokeWidth={2} aria-hidden="true" />
-            </button>
-          )}
+          <button
+            type="button"
+            className="objetivos-botao-adicionar"
+            onClick={aoAdicionarObjetivo}
+            aria-label="Adicionar objetivo"
+          >
+            <Plus size={16} strokeWidth={2} aria-hidden="true" />
+          </button>
         </div>
       </div>
 
       {erro && (
         <p className="campo-erro" role="alert">{erro}</p>
+      )}
+
+      {novoObjetivoAberto && (
+        <div className="objetivos-novo-campo">
+          <input
+            type="text"
+            className="objetivos-input-novo"
+            value={textoNovo}
+            onChange={(evento) => {
+              setTextoNovo(evento.target.value)
+              if (erro) setErro(null)
+            }}
+            placeholder="Novo objetivo"
+            aria-label="Novo objetivo"
+            autoFocus
+            onKeyDown={(evento) => {
+              if (evento.key === 'Enter') {
+                evento.preventDefault()
+                void aoCriarObjetivo()
+              } else if (evento.key === 'Escape') {
+                aoCancelarNovoObjetivo()
+              }
+            }}
+          />
+          <button
+            type="button"
+            className="objetivos-botao-confirmar"
+            onClick={() => void aoCriarObjetivo()}
+            disabled={iniciando || !textoNovo.trim()}
+            aria-label="Confirmar novo objetivo"
+          >
+            <Check size={16} strokeWidth={2} aria-hidden="true" />
+          </button>
+          <button
+            type="button"
+            className="objetivos-botao-cancelar"
+            onClick={aoCancelarNovoObjetivo}
+            aria-label="Cancelar novo objetivo"
+          >
+            <X size={16} strokeWidth={2} aria-hidden="true" />
+          </button>
+        </div>
       )}
 
       {abertos.length === 0 && concluidos.length === 0 && (
