@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { Jogo, SituacaoJogo } from '../../data'
 import {
+  buscarJogos,
   classeDaSituacao,
   contarJogosPorSituacao,
   escolherJogoEmDestaque,
@@ -147,5 +148,50 @@ describe('formatação', () => {
     expect(classeDaSituacao('Pausado')).toBe('situacao-pausado')
     expect(classeDaSituacao('Concluído')).toBe('situacao-concluido')
     expect(classeDaSituacao('Quero jogar')).toBe('situacao-quero')
+  })
+})
+
+describe('buscarJogos', () => {
+  const jogo = (id: string, nome: string, plataforma = 'PC', generos: string[] = []): Jogo => ({
+    id,
+    nome,
+    plataforma,
+    generos,
+    capa: null,
+    situacao: 'Jogando',
+    criadoEm: new Date('2026-01-01T00:00:00Z'),
+    atualizadoEm: new Date('2026-01-01T00:00:00Z'),
+  })
+
+  const jogos = [
+    jogo('1', 'Resident Evil 2', 'PC', ['Terror', 'Ação']),
+    jogo('2', 'Resident Evil Village', 'PlayStation', ['Terror']),
+    jogo('3', 'Alan Wake', 'PC', ['Mistério']),
+    jogo('4', 'Pokémon Ônix', 'Nintendo Switch'),
+  ]
+
+  it('sem texto, devolve todos', () => {
+    expect(buscarJogos(jogos, '')).toHaveLength(4)
+    expect(buscarJogos(jogos, '   ')).toHaveLength(4)
+  })
+
+  it('ignora maiúsculas e acentos', () => {
+    expect(buscarJogos(jogos, 'POKEMON').map((j) => j.id)).toEqual(['4'])
+    expect(buscarJogos(jogos, 'onix').map((j) => j.id)).toEqual(['4'])
+    expect(buscarJogos(jogos, 'misterio').map((j) => j.id)).toEqual(['3'])
+  })
+
+  it('várias palavras valem em qualquer ordem', () => {
+    expect(buscarJogos(jogos, 'evil 2').map((j) => j.id)).toEqual(['1'])
+    expect(buscarJogos(jogos, '2 resident').map((j) => j.id)).toEqual(['1'])
+  })
+
+  it('também procura na plataforma e no gênero', () => {
+    expect(buscarJogos(jogos, 'playstation').map((j) => j.id)).toEqual(['2'])
+    expect(buscarJogos(jogos, 'terror').map((j) => j.id)).toEqual(['1', '2'])
+  })
+
+  it('sem correspondência, devolve lista vazia', () => {
+    expect(buscarJogos(jogos, 'zelda')).toEqual([])
   })
 })

@@ -47,6 +47,25 @@ export function escolherJogoEmDestaque(
   )
 }
 
+/**
+ * Procura jogos pelo nome, plataforma ou gênero, sem diferenciar maiúsculas nem
+ * acentos. Cada palavra digitada precisa aparecer em algum desses campos, em
+ * qualquer ordem. Busca vazia devolve todos os jogos.
+ */
+export function buscarJogos(jogos: Jogo[], termo: string): Jogo[] {
+  const palavras = normalizarTexto(termo).split(' ').filter(Boolean)
+
+  if (palavras.length === 0) return jogos
+
+  return jogos.filter((jogo) => {
+    const texto = normalizarTexto(
+      [jogo.nome, jogo.plataforma, ...jogo.generos].join(' '),
+    )
+
+    return palavras.every((palavra) => texto.includes(palavra))
+  })
+}
+
 export function normalizarTexto(valor: string): string {
   return valor
     .normalize('NFD')

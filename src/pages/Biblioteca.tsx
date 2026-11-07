@@ -7,7 +7,9 @@ import {
   Pencil,
   Play,
   Plus,
+  Search,
   Trash2,
+  X,
 } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
@@ -19,6 +21,7 @@ import { useJogoAtual } from '../contexts/JogoAtualContext'
 import { useServicoSavePoint } from '../contexts/ServicoContext'
 import {
   classeDaSituacao,
+  buscarJogos,
   contarJogosPorSituacao,
   escolherJogoEmDestaque,
   FILTROS_BIBLIOTECA,
@@ -37,6 +40,7 @@ export function Biblioteca() {
   const { jogoAtualId, definirJogoAtual, limparJogoAtual } = useJogoAtual()
   const navigate = useNavigate()
   const [filtro, setFiltro] = useState<FiltroBiblioteca>('Todos')
+  const [busca, setBusca] = useState('')
   const servico = useServicoSavePoint()
   const { mostrarAviso } = useAviso()
   const [menuJogoId, setMenuJogoId] = useState<string | null>(null)
@@ -79,8 +83,12 @@ export function Biblioteca() {
   )
 
   const destaque = escolherJogoEmDestaque(jogos, jogoAtualId)
-  const contagens = contarJogosPorSituacao(jogos)
-  const jogosFiltrados = filtrarJogos(jogos, filtro)
+  // A busca vem primeiro: as contagens dos filtros mostram quantos jogos há em cada
+  // situação entre os que combinam com o que foi digitado.
+  const buscaAtiva = busca.trim().length > 0
+  const jogosBuscados = buscarJogos(jogos, busca)
+  const contagens = contarJogosPorSituacao(jogosBuscados)
+  const jogosFiltrados = filtrarJogos(jogosBuscados, filtro)
 
   async function pedirExclusao(jogo: Jogo) {
     setMenuJogoId(null)
@@ -212,6 +220,31 @@ export function Biblioteca() {
         <>
           <h2 className="secao-titulo">Filtrar jogos</h2>
 
+          <div className="biblioteca-busca" role="search">
+            <Search size={16} strokeWidth={1.75} aria-hidden="true" />
+            <input
+              type="search"
+              value={busca}
+              onChange={(evento) => setBusca(evento.target.value)}
+              placeholder="Buscar jogo"
+              aria-label="Buscar jogo na biblioteca"
+              enterKeyHint="search"
+              autoComplete="off"
+              autoCorrect="off"
+              spellCheck={false}
+            />
+            {busca && (
+              <button
+                type="button"
+                className="biblioteca-busca-limpar"
+                onClick={() => setBusca('')}
+                aria-label="Limpar busca"
+              >
+                <X size={14} strokeWidth={2} aria-hidden="true" />
+              </button>
+            )}
+          </div>
+
           <div className="filtros" role="group" aria-label="Filtrar jogos por situação">
             {FILTROS_BIBLIOTECA.map((opcao) => (
               <button
@@ -230,7 +263,13 @@ export function Biblioteca() {
           {jogosFiltrados.length === 0 ? (
             <div className="filtro-vazio">
               <Gamepad2 size={22} strokeWidth={1.5} aria-hidden="true" />
-              <p>Nenhum jogo em “{filtro}” por enquanto.</p>
+              <p>
+                {buscaAtiva
+                  ? `Nenhum jogo encontrado para “${busca.trim()}”${
+                      filtro === 'Todos' ? '' : ` em “${filtro}”`
+                    }.`
+                  : `Nenhum jogo em “${filtro}” por enquanto.`}
+              </p>
             </div>
           ) : (
             <div className="grade-jogos">
