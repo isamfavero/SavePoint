@@ -16,6 +16,7 @@
   --color-status: #6dd8cf;
 
   --app-width: 390px;
+  --altura-barra-inferior: 64px;
 
   font-family: var(--font-body);
   font-synthesis: none;
@@ -77,7 +78,7 @@ textarea {
 .app-main {
   flex: 1;
   min-height: 0;
-  padding: 40px 20px 92px;
+  padding: 40px 20px calc(var(--altura-barra-inferior) + 56px + 32px + env(safe-area-inset-bottom));
   overflow-y: auto;
   overscroll-behavior-y: contain;
   -webkit-overflow-scrolling: touch;
@@ -312,7 +313,7 @@ textarea {
 
   .app-main {
     padding-top: 44px;
-    padding-bottom: 40px;
+    padding-bottom: calc(var(--altura-barra-inferior) + 56px + 32px + env(safe-area-inset-bottom));
   }
 
   .mini-cronometro-area {
@@ -888,7 +889,7 @@ textarea {
 .fab {
   position: absolute;
   right: 16px;
-  bottom: 16px;
+  bottom: calc(var(--altura-barra-inferior) + env(safe-area-inset-bottom) + 16px);
   z-index: 11;
   display: grid;
   place-items: center;
