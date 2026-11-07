@@ -2533,12 +2533,23 @@ textarea {
   position: relative;
 }
 
+/* Barra de horas */
+
 .trilha-barra-container {
-  margin-bottom: 8px;
+  margin-bottom: 12px;
+}
+
+.trilha-barra-trilho {
+  position: relative;
+  height: 20px;
+  margin: 0 10px;
+  display: flex;
+  align-items: center;
 }
 
 .trilha-barra {
   position: relative;
+  width: 100%;
   height: 8px;
   border-radius: 999px;
   background: rgba(242, 184, 75, 0.12);
@@ -2549,7 +2560,7 @@ textarea {
   position: absolute;
   inset: 0;
   height: 100%;
-  background: linear-gradient(90deg, #6DD8CF, #F2B84B);
+  background: linear-gradient(90deg, #56b3ab, #F2B84B);
   width: 100%;
 }
 
@@ -2562,6 +2573,7 @@ textarea {
   background: #11131B;
   border: 1.5px solid #e1e1ed;
   transform: translate(-50%, -50%);
+  z-index: 2;
 }
 
 .trilha-ponto-ultimo {
@@ -2570,12 +2582,13 @@ textarea {
   background: #f2b84b;
   border: none;
   box-shadow: 0 0 12px rgba(242, 184, 75, 0.7);
+  z-index: 3;
 }
 
 .trilha-eixos {
   position: relative;
   height: 14px;
-  margin-top: 6px;
+  margin: 0 10px 8px;
   color: var(--color-text-muted);
   font-size: 11px;
   font-weight: 500;
@@ -2595,30 +2608,70 @@ textarea {
   font-weight: 700;
 }
 
-.trilha-voce-esta-aqui {
+/* Duas colunas da Trilha */
+
+.trilha-corpo {
+  position: relative;
   display: flex;
-  align-items: center;
-  margin-top: 12px;
-  padding-left: 28px;
+}
+
+.trilha-coluna-esquerda {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 28px;
+  pointer-events: none;
+}
+
+.trilha-linha-vertical {
+  position: absolute;
+  left: 14px;
+  top: 24px;
+  bottom: 24px;
+  width: 2px;
+  transform: translateX(-50%);
+  background: linear-gradient(to bottom, #f2b84b, #6DD8CF);
+  z-index: 1;
+}
+
+.trilha-coluna-direita {
+  margin-left: 28px;
+  width: calc(100% - 28px);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* Item Você está aqui */
+
+.trilha-item-voce {
+  position: relative;
 }
 
 .trilha-ponto-aqui {
-  flex: 0 0 auto;
+  position: absolute;
+  left: -14px;
+  top: 50%;
+  transform: translate(-50%, -50%);
   width: 14px;
   height: 14px;
   border-radius: 50%;
   background: #f2b84b;
   box-shadow: 0 0 10px rgba(242, 184, 75, 0.7);
-  margin-left: -14px;
-  margin-right: 10px;
+  z-index: 2;
+}
+
+.trilha-voce-esta-aqui {
+  background: #181920;
+  border-radius: 14px;
+  padding: 12px;
 }
 
 .trilha-voce-textos {
   display: flex;
   flex-direction: column;
   gap: 2px;
-  flex: 1;
-  min-width: 0;
 }
 
 .trilha-rotulo-aqui {
@@ -2645,60 +2698,7 @@ textarea {
   overflow: hidden;
 }
 
-.trilha-vazia {
-  padding: 32px 24px;
-  border-radius: 16px;
-  background: #11131B;
-  color: #9898a3;
-  font-size: 0.9rem;
-  text-align: center;
-}
-
-/* Linha vertical da trilha */
-
-.trilha-linha-vertical {
-  position: absolute;
-  left: 14px;
-  top: 30px;
-  bottom: 20px;
-  width: 2px;
-  background: linear-gradient(to bottom, #f2b84b, #6DD8CF);
-}
-
-/* Ponto de cada sessão na linha vertical */
-
-.trilha-ponto-sessao {
-  position: absolute;
-  left: 14px;
-  top: 4px;
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  background: #6DD8CF;
-  border: 2px solid #1D1F28;
-  z-index: 2;
-}
-
-.trilha-ponto-sessao-recente,
-.trilha-sessao-ativa-item .trilha-ponto-sessao {
-  background: #f2b84b;
-  border: none;
-  box-shadow: 0 0 10px rgba(242, 184, 75, 0.7);
-  animation: trilha-pulso 2s infinite;
-}
-
-@keyframes trilha-pulso {
-  0%, 100% {
-    box-shadow: 0 0 10px rgba(242, 184, 75, 0.7);
-    transform: scale(1);
-  }
-  50% {
-    box-shadow: 0 0 20px rgba(242, 184, 75, 0.9);
-    transform: scale(1.15);
-  }
-}
-
-/* Conteúdo e cartão de cada sessão */
+/* Sessões */
 
 .trilha-sessoes {
   display: flex;
@@ -2708,20 +2708,18 @@ textarea {
 
 .trilha-sessao {
   position: relative;
-  display: flex;
-  align-items: flex-start;
 }
 
 .trilha-ponto-sessao {
   position: absolute;
-  left: 14px;
-  top: 14px;
+  left: -14px;
+  top: 24px;
+  transform: translate(-50%, -50%);
   width: 10px;
   height: 10px;
   border-radius: 50%;
   background: #6DD8CF;
   border: 2px solid #1D1F28;
-  transform: translate(-50%, -50%);
   z-index: 2;
 }
 
@@ -2745,8 +2743,7 @@ textarea {
 }
 
 .trilha-sessao-card {
-  margin-left: 28px;
-  width: calc(100% - 28px);
+  width: 100%;
   background: #181920;
   border: 1px solid #282A32;
   border-radius: 16px;
@@ -2871,8 +2868,7 @@ textarea {
 /* Grupo de sessões anteriores */
 
 .trilha-grupo-anteriores {
-  margin-left: 28px;
-  margin-top: 4px;
+  width: 100%;
 }
 
 .trilha-botao-expandir {
@@ -2929,7 +2925,15 @@ textarea {
   flex-direction: column;
   gap: 12px;
   margin-top: 12px;
-  margin-left: -28px;
+}
+
+.trilha-vazia {
+  padding: 32px 24px;
+  border-radius: 16px;
+  background: #11131B;
+  color: #9898a3;
+  font-size: 0.9rem;
+  text-align: center;
 }
 
 /* ---------- Objetivos ---------- */

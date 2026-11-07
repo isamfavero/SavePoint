@@ -32,6 +32,36 @@ export function calcularRotulosTrilha(
   sessoes: Sessao[],
   horasTotais: number,
 ): PontoRotulo[] {
+  const pontos = calcularPontosTrilha(sessoes, horasTotais)
+  if (pontos.length === 0) return []
+
+  // Regra de sobreposição: o rótulo "0h" e o rótulo do último ponto SEMPRE aparecem.
+  // Se dois rótulos ficarem a menos de 36 px um do outro, esconde-se o anterior,
+  // nunca o último.
+  const resultado: PontoRotulo[] = [pontos[0]]
+
+  for (let i = 1; i < pontos.length; i++) {
+    const ponto = pontos[i]
+    const ultimoMantido = resultado[resultado.length - 1]
+    const muitoPerto = ponto.posicao - ultimoMantido.posicao < 36
+
+    if (ponto.ehUltimo) {
+      if (muitoPerto && resultado.length > 1) {
+        resultado.pop()
+      }
+      resultado.push(ponto)
+    } else if (!muitoPerto) {
+      resultado.push(ponto)
+    }
+  }
+
+  return resultado
+}
+
+export function calcularPontosTrilha(
+  sessoes: Sessao[],
+  horasTotais: number,
+): PontoRotulo[] {
   const encerradas = sessoes.filter((s) => s.fim !== null)
 
   if (encerradas.length === 0) return []
@@ -65,27 +95,7 @@ export function calcularRotulosTrilha(
     ultimo.horas = horasTotais
   }
 
-  // Regra de sobreposição: o rótulo "0h" e o rótulo do último ponto SEMPRE aparecem.
-  // Se dois rótulos ficarem a menos de 36 px um do outro, esconde-se o anterior,
-  // nunca o último.
-  const resultado: PontoRotulo[] = [pontos[0]]
-
-  for (let i = 1; i < pontos.length; i++) {
-    const ponto = pontos[i]
-    const ultimoMantido = resultado[resultado.length - 1]
-    const muitoPerto = ponto.posicao - ultimoMantido.posicao < 36
-
-    if (ponto.ehUltimo) {
-      if (muitoPerto && resultado.length > 1) {
-        resultado.pop()
-      }
-      resultado.push(ponto)
-    } else if (!muitoPerto) {
-      resultado.push(ponto)
-    }
-  }
-
-  return resultado
+  return pontos
 }
 
 function calcularDuracaoSessao(sessao: Sessao): number {
@@ -153,6 +163,7 @@ export function TrilhaCronologica({
         ? ultimaEncerrada?.oQueFiz
         : null
 
+  const pontos = calcularPontosTrilha(sessoesFinalizadas, horasTotais)
   const rotulos = calcularRotulosTrilha(sessoesFinalizadas, horasTotais)
 
   function alternarExpansao(registroId: string) {
@@ -229,18 +240,6 @@ export function TrilhaCronologica({
 
       <div className="trilha-card">
         <div className="trilha-barra-container">
-          <div className="trilha-barra" role="progressbar" aria-valuenow={100} aria-valuemin={0} aria-valuemax={100}>
-            <div className="trilha-linha" />
-            {rotulos.map((rotulo) => (
-              <div
-                key={rotulo.texto}
-                className={`trilha-ponto${rotulo.ehUltimo ? ' trilha-ponto-ultimo' : ''}`}
-                style={{ left: `${rotulo.posicao}%` }}
-                aria-label={`Fim da sessão em ${rotulo.texto}`}
-              />
-            ))}
-          </div>
-
           <div className="trilha-eixos">
             {rotulos.map((rotulo) => (
               <span
@@ -252,107 +251,117 @@ export function TrilhaCronologica({
               </span>
             ))}
           </div>
-        </div>
 
-        <div className="trilha-voce-esta-aqui">
-          <span className="trilha-ponto-aqui" aria-hidden="true" />
-          <div className="trilha-voce-textos">
-            <span className="trilha-rotulo-aqui">
-              VOCÊ ESTÁ AQUI · {formatarDuracaoTrilha(horasTotais * 3_600_000)}
-            </span>
-            <p className="trilha-ondem-parei">
-              {tipoOndeParei && textoOndeParei
-                ? textoCurto(textoOndeParei)
-                : 'Registre onde parou ao encerrar uma sessão.'}
-            </p>
+          <div className="trilha-barra-trilho">
+            <div className="trilha-barra" role="progressbar" aria-valuenow={100} aria-valuemin={0} aria-valuemax={100}>
+              <div className="trilha-linha" />
+            </div>
+            {pontos.map((ponto, index) => (
+              <div
+                key={`${ponto.texto}-${index}`}
+                className={`trilha-ponto${ponto.ehUltimo ? ' trilha-ponto-ultimo' : ''}`}
+                style={{ left: `${ponto.posicao}%` }}
+                aria-label={`Fim da sessão em ${ponto.texto}`}
+              />
+            ))}
           </div>
         </div>
-      </div>
 
-      {sessaoAtiva && (
-        <div className="trilha-sessao-atual">
-          <div className="trilha-ponto-atual" aria-hidden="true" />
-          <div className="trilha-sessao-info">
-            <span className="trilha-sessao-titulo">Sessão {sessaoAtiva.numero} · em andamento</span>
-            <span className="trilha-sessao-tempo">
-              {formatarDuracaoTrilha(calcularDuracaoSessao(sessaoAtiva))}
-            </span>
+        <div className="trilha-corpo">
+          <div className="trilha-coluna-esquerda" aria-hidden="true">
+            <div className="trilha-linha-vertical" />
           </div>
-        </div>
-      )}
 
-      <div className="trilha-linha-vertical" aria-hidden="true" />
-
-      <div className="trilha-sessoes">
-        {sessoesVisuais.map((sessao) => {
-          const duracaoMs = calcularDuracaoSessao(sessao)
-          const acumuladoMs = obterAcumuladoMs(sessao)
-          const registros = registrosPorSessao[sessao.id] ?? []
-          const registrosTrilha = registros.filter(
-            (r) => r.tipo === 'Marco' || r.tipo === 'Região mapeada' || r.tipo === 'Diário',
-          )
-
-          return (
-            <SessaoTrilha
-              key={sessao.id}
-              sessao={sessao}
-              duracaoMs={duracaoMs}
-              acumuladoMs={acumuladoMs}
-              registros={registrosTrilha}
-              expansoes={expansoes}
-              aoAlternarExpansao={alternarExpansao}
-              estaAtiva={sessao.id === sessaoAtiva?.id}
-              isMaisRecente={sessao.id === sessaoMaisRecenteId}
-              aoNavegarNotas={() => navigate(`/jornada/sessao/${sessao.id}/notas`)}
-            />
-          )
-        })}
-
-        {sessoesRecolhidas.length > 0 && (
-          <div className="trilha-grupo-anteriores">
-            <button
-              type="button"
-              className="trilha-botao-expandir"
-              onClick={() => setExpandirAnteriores(!expandirAnteriores)}
-            >
-              <div className="trilha-expandir-info">
-                <ChevronsUpDown size={16} strokeWidth={1.75} aria-hidden="true" className="trilha-expandir-icone" />
-                <span className="trilha-expandir-texto">{textoResumoRecolhidas}</span>
+          <div className="trilha-coluna-direita">
+            <div className="trilha-item-linha trilha-item-voce">
+              <span className="trilha-ponto-aqui" aria-hidden="true" />
+              <div className="trilha-voce-esta-aqui">
+                <div className="trilha-voce-textos">
+                  <span className="trilha-rotulo-aqui">
+                    VOCÊ ESTÁ AQUI · {formatarDuracaoTrilha(horasTotais * 3_600_000)}
+                  </span>
+                  <p className="trilha-ondem-parei">
+                    {tipoOndeParei && textoOndeParei
+                      ? textoCurto(textoOndeParei)
+                      : 'Registre onde parou ao encerrar uma sessão.'}
+                  </p>
+                </div>
               </div>
-              <span className="trilha-expandir-acao">
-                {expandirAnteriores ? 'RECOLHER' : 'EXPANDIR'}
-              </span>
-            </button>
+            </div>
 
-            {expandirAnteriores && (
-              <div className="trilha-sessoes-recolhidas-lista">
-                {sessoesRecolhidas.map((sessao) => {
-                  const duracaoMs = calcularDuracaoSessao(sessao)
-                  const acumuladoMs = obterAcumuladoMs(sessao)
-                  const registros = registrosPorSessao[sessao.id] ?? []
-                  const registrosTrilha = registros.filter(
-                    (r) => r.tipo === 'Marco' || r.tipo === 'Região mapeada' || r.tipo === 'Diário',
-                  )
+            <div className="trilha-sessoes">
+              {sessoesVisuais.map((sessao) => {
+                const duracaoMs = calcularDuracaoSessao(sessao)
+                const acumuladoMs = obterAcumuladoMs(sessao)
+                const registros = registrosPorSessao[sessao.id] ?? []
+                const registrosTrilha = registros.filter(
+                  (r) => r.tipo === 'Marco' || r.tipo === 'Região mapeada' || r.tipo === 'Diário',
+                )
 
-                  return (
-                    <SessaoTrilha
-                      key={sessao.id}
-                      sessao={sessao}
-                      duracaoMs={duracaoMs}
-                      acumuladoMs={acumuladoMs}
-                      registros={registrosTrilha}
-                      expansoes={expansoes}
-                      aoAlternarExpansao={alternarExpansao}
-                      estaAtiva={sessao.id === sessaoAtiva?.id}
-                      isMaisRecente={sessao.id === sessaoMaisRecenteId}
-                      aoNavegarNotas={() => navigate(`/jornada/sessao/${sessao.id}/notas`)}
-                    />
-                  )
-                })}
-              </div>
-            )}
+                return (
+                  <SessaoTrilha
+                    key={sessao.id}
+                    sessao={sessao}
+                    duracaoMs={duracaoMs}
+                    acumuladoMs={acumuladoMs}
+                    registros={registrosTrilha}
+                    expansoes={expansoes}
+                    aoAlternarExpansao={alternarExpansao}
+                    estaAtiva={sessao.id === sessaoAtiva?.id}
+                    isMaisRecente={sessao.id === sessaoMaisRecenteId}
+                    aoNavegarNotas={() => navigate(`/jornada/sessao/${sessao.id}/notas`)}
+                  />
+                )
+              })}
+
+              {sessoesRecolhidas.length > 0 && (
+                <div className="trilha-grupo-anteriores">
+                  <button
+                    type="button"
+                    className="trilha-botao-expandir"
+                    onClick={() => setExpandirAnteriores(!expandirAnteriores)}
+                  >
+                    <div className="trilha-expandir-info">
+                      <ChevronsUpDown size={16} strokeWidth={1.75} aria-hidden="true" className="trilha-expandir-icone" />
+                      <span className="trilha-expandir-texto">{textoResumoRecolhidas}</span>
+                    </div>
+                    <span className="trilha-expandir-acao">
+                      {expandirAnteriores ? 'RECOLHER' : 'EXPANDIR'}
+                    </span>
+                  </button>
+
+                  {expandirAnteriores && (
+                    <div className="trilha-sessoes-recolhidas-lista">
+                      {sessoesRecolhidas.map((sessao) => {
+                        const duracaoMs = calcularDuracaoSessao(sessao)
+                        const acumuladoMs = obterAcumuladoMs(sessao)
+                        const registros = registrosPorSessao[sessao.id] ?? []
+                        const registrosTrilha = registros.filter(
+                          (r) => r.tipo === 'Marco' || r.tipo === 'Região mapeada' || r.tipo === 'Diário',
+                        )
+
+                        return (
+                          <SessaoTrilha
+                            key={sessao.id}
+                            sessao={sessao}
+                            duracaoMs={duracaoMs}
+                            acumuladoMs={acumuladoMs}
+                            registros={registrosTrilha}
+                            expansoes={expansoes}
+                            aoAlternarExpansao={alternarExpansao}
+                            estaAtiva={sessao.id === sessaoAtiva?.id}
+                            isMaisRecente={sessao.id === sessaoMaisRecenteId}
+                            aoNavegarNotas={() => navigate(`/jornada/sessao/${sessao.id}/notas`)}
+                          />
+                        )
+                      })}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
-        )}
+        </div>
       </div>
     </section>
   )
